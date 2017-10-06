@@ -23,7 +23,7 @@ def cut(node):
         if descendant.DELETED:
             continue
         descendant.DELETED = True
-        descendant.left_dist = 0; descendant.right_dist = 0; descendant.edge_length = 0
+        descendant.left_dist = 0; descendant.right_dist = 0; descendant.edge_length = 0; descendant.num_leaves = 0
         desc_children = descendant.child_nodes()
         if len(desc_children) == 0:
             cluster.append(descendant.taxon.label)
@@ -139,6 +139,8 @@ def min_clusters_threshold_avg(tree,threshold,support):
             node.total_dist = 0
         else:
             node.num_leaves = child_nodes[0].num_leaves + child_nodes[1].num_leaves
+            if node.num_leaves == 0:
+                cut(node); continue
             nl = child_nodes[0].num_leaves; nr = child_nodes[1].num_leaves
             dl = float(child_nodes[0].total_dist); dr = float(child_nodes[1].total_dist)
             el = child_nodes[0].edge_length; er = child_nodes[1].edge_length
@@ -146,12 +148,12 @@ def min_clusters_threshold_avg(tree,threshold,support):
 
             # if my kids are screwing things up, cut out the longer one
             if node.total_dist/(nl*nr) > threshold:
-                if (dl/nl) > (dr/nr):
+                if dl > dr:
+                    node.left_dist = 0; node.num_leaves -= child_nodes[0].num_leaves
                     cluster = cut(child_nodes[0])
-                    node.left_dist = 0
                 else:
+                    node.right_dist = 0; node.num_leaves -= child_nodes[1].num_leaves
                     cluster = cut(child_nodes[1])
-                    node.right_dist = 0
 
                 # add cluster
                 if len(cluster) != 0:
@@ -180,17 +182,18 @@ def min_clusters_threshold_avg_subtree(tree,threshold,support):
             node.total_dist = 0
         else:
             node.num_leaves = child_nodes[0].num_leaves + child_nodes[1].num_leaves
+            if node.num_leaves == 0:
+                cut(node); continue
             nl = child_nodes[0].num_leaves; nr = child_nodes[1].num_leaves
             dl = float(child_nodes[0].total_dist); dr = float(child_nodes[1].total_dist)
             el = child_nodes[0].edge_length; er = child_nodes[1].edge_length
             node.total_dist = nr*dl + nl*dr + (nl*nr)*(el+er)
 
-            # if my kids are screwing things up, cut both
+            # if my kids are screwing things up, cut out the longer one
             if node.total_dist/(nl*nr) > threshold:
+                node.left_dist = 0; node.right_dist = 0; node.num_leaves = 0
                 cluster_l = cut(child_nodes[0])
-                node.left_dist = 0
                 cluster_r = cut(child_nodes[1])
-                node.right_dist = 0
 
                 # add cluster
                 for cluster in (cluster_l,cluster_r):
