@@ -214,7 +214,6 @@ if __name__ == "__main__":
     import dendropy
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-i', '--input', required=False, type=str, default='stdin', help="Input Tree File")
-    parser.add_argument('-p', '--protein', action='store_true', help="Tree Made from Protein Sequences (not DNA)")
     parser.add_argument('-t', '--threshold', required=True, type=float, help="Length Threshold")
     parser.add_argument('-s', '--support', required=False, type=float, default=0, help="Branch Support Threshold")
     parser.add_argument('-m', '--method', required=False, type=str, default='max', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
@@ -223,15 +222,14 @@ if __name__ == "__main__":
         from sys import stdin; infile = stdin
     else:
         infile = open(args.input)
-    trees = [dendropy.Tree.get(data=line.strip(),schema='newick') for line in infile.read().strip().splitlines()]
+    trees = [dendropy.Tree.get(data=line.strip(),schema='newick',preserve_underscores=True) for line in infile.read().strip().splitlines()]
     assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
     assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
-    threshold = p_to_jc(args.threshold, {True:'protein',False:'dna'}[args.protein])
     assert args.support >= 0, "ERROR: Branch support must be at least 0"
 
     # run algorithm
     for t,tree in enumerate(trees):
-        clusters = METHODS[args.method.lower()](tree,threshold,args.support)
+        clusters = METHODS[args.method.lower()](tree,args.threshold,args.support)
         f = open('%s.tree%d.list.txt' % (args.input,t+1), 'w')
         f.write('SequenceName\tClusterNumber\n')
         cluster_num = 1
