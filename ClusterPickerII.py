@@ -33,7 +33,7 @@ def cut(node):
     return cluster
 
 # initialize properties of input tree and return set containing taxa of leaves
-def prep(tree):
+def prep(tree,support):
     tree.seed_node.edge_length = 0
     leaves = set()
     for node in tree.postorder_node_iter():
@@ -42,11 +42,17 @@ def prep(tree):
         assert len(child_nodes) in {0,2}, "ERROR: Multifurcating tree. Resolve polytomies first"
         if len(child_nodes) == 0:
             leaves.add(node.taxon.label)
+        if node.label is None:
+            node.label = 1.
+        else:
+            node.label = float(node.label)
+            if node.label < support:
+                node.edge_length = float('inf') # don't allow low-support edges
     return leaves
 
 # split leaves into minimum number of clusters such that the maximum leaf pairwise distance is below some threshold
-def min_clusters_threshold_max(tree,threshold):
-    leaves = prep(tree)
+def min_clusters_threshold_max(tree,threshold,support):
+    leaves = prep(tree,support)
     clusters = []
     for node in tree.postorder_node_iter():
         # if I've already been handled, ignore me
@@ -82,8 +88,8 @@ def min_clusters_threshold_max(tree,threshold):
     return clusters
 
 # min_clusters_threshold_max, but all clusters must define a subtree
-def min_clusters_threshold_max_subtree(tree,threshold):
-    leaves = prep(tree)
+def min_clusters_threshold_max_subtree(tree,threshold,support):
+    leaves = prep(tree,support)
     clusters = []
     for node in tree.postorder_node_iter():
         # if I've already been handled, ignore me
@@ -118,8 +124,8 @@ def min_clusters_threshold_max_subtree(tree,threshold):
     return clusters
 
 # split leaves into minimum number of clusters such that the average leaf pairwise distance is below some threshold
-def min_clusters_threshold_avg(tree,threshold):
-    leaves = prep(tree)
+def min_clusters_threshold_avg(tree,threshold,support):
+    leaves = prep(tree,support)
     clusters = []
     for node in tree.postorder_node_iter():
         # if I've already been handled, ignore me
@@ -159,8 +165,8 @@ def min_clusters_threshold_avg(tree,threshold):
     return clusters
 
 # min_clusters_threshold_avg, but all clusters must define a subtree
-def min_clusters_threshold_avg_subtree(tree,threshold):
-    leaves = prep(tree)
+def min_clusters_threshold_avg_subtree(tree,threshold,support):
+    leaves = prep(tree,support)
     clusters = []
     for node in tree.postorder_node_iter():
         # if I've already been handled, ignore me
@@ -207,6 +213,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--input', required=False, type=str, default='stdin', help="Input Tree File")
     parser.add_argument('-p', '--protein', action='store_true', help="Tree Made from Protein Sequences (not DNA)")
     parser.add_argument('-t', '--threshold', required=True, type=float, help="Length Threshold")
+    parser.add_argument('-s', '--support', required=False, type=float, default=0, help="Branch Support Threshold")
     parser.add_argument('-m', '--method', required=False, type=str, default='max', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
     args = parser.parse_args()
     if args.input == 'stdin':
@@ -217,10 +224,11 @@ if __name__ == "__main__":
     assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
     assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
     threshold = p_to_jc(args.threshold, {True:'protein',False:'dna'}[args.protein])
+    assert args.support >= 0, "ERROR: Branch support must be at least 0"
 
     # run algorithm
     for t,tree in enumerate(trees):
-        clusters = METHODS[args.method.lower()](tree,threshold)
+        clusters = METHODS[args.method.lower()](tree,threshold,args.support)
         f = open('%s.tree%d.list.txt' % (args.input,t+1), 'w')
         f.write('SequenceName\tClusterNumber\n')
         cluster_num = 1
