@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 '''
-Split the leaves of a given tree into the minimum number of clusters such that,
-in each cluster, no pair of leaves is more than the given distance threshold
-apart.
+Expansion of ClusterPicker (Manon Ragonnet & Emma Hodcroft):
+* The algorithms implemented in ClusterPicker were at least quadratic in time
+  complexity, so they have been implemented in linear time here
+* ClusterPicker requires clusters to correspond to entire subtrees. We have
+  added algorithms that do not have this restriction
 '''
 from queue import Queue
 
@@ -24,6 +26,7 @@ def cut(node):
                 descendants.put(c)
     return cluster
 
+# split leaves into minimum number of clusters such that the maximum leaf pairwise distance is below some threshold
 def min_clusters_threshold_max(tree,threshold):
     # check for validity and prep
     tree.seed_node.edge_length = 0
