@@ -6,7 +6,13 @@ Expansion of ClusterPicker (Manon Ragonnet & Emma Hodcroft):
 * ClusterPicker requires clusters to correspond to entire subtrees. We have
   added algorithms that do not have this restriction (also linear-time)
 '''
+from math import log
 from queue import Queue
+
+# convert p-distance to Jukes-Cantor distance
+def p_to_jc(d,seq_type):
+    b = {'dna':3./4., 'protein':19./20.}[seq_type]
+    return -1*b*log(1-(d/b))
 
 # cut out the current node's subtree (by setting all nodes' DELETED to True) and return list of leaves
 def cut(node):
@@ -195,20 +201,34 @@ def min_clusters_threshold_avg_subtree(tree,threshold):
 METHODS = {'max':min_clusters_threshold_max, 'avg':min_clusters_threshold_avg, 'max_subtree':min_clusters_threshold_max_subtree, 'avg_subtree':min_clusters_threshold_avg_subtree}
 if __name__ == "__main__":
     # parse user arguments
-    from sys import stdin
     import argparse
     import dendropy
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-f', '--file', required=False, type=argparse.FileType('r'), default=stdin, help="Input Tree File (default: stdin)")
+    parser.add_argument('-i', '--input', required=False, type=str, default='stdin', help="Input Tree File")
+    parser.add_argument('-p', '--protein', action='store_true', help="Tree Made from Protein Sequences (not DNA)")
     parser.add_argument('-t', '--threshold', required=True, type=float, help="Length Threshold")
     parser.add_argument('-m', '--method', required=False, type=str, default='max', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
     args = parser.parse_args()
-    trees = [dendropy.Tree.get(data=line.strip(),schema='newick') for line in args.file.read().strip().splitlines()]
+    if args.input == 'stdin':
+        from sys import stdin; infile = stdin
+    else:
+        infile = open(args.input)
+    trees = [dendropy.Tree.get(data=line.strip(),schema='newick') for line in infile.read().strip().splitlines()]
     assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
+    assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
+    threshold = p_to_jc(args.threshold, {True:'protein',False:'dna'}[args.protein])
 
     # run algorithm
-    for tree in trees:
-        clusters = METHODS[args.method.lower()](tree,args.threshold)
+    for t,tree in enumerate(trees):
+        clusters = METHODS[args.method.lower()](tree,threshold)
+        f = open('%s.tree%d.list.txt' % (args.input,t+1), 'w')
+        f.write('SequenceName\tClusterNumber\n')
+        cluster_num = 1
         for cluster in clusters:
-            print(cluster)
-        print()
+            if len(cluster) == 1:
+                f.write('%s\t-1\n' % list(cluster)[0])
+            else:
+                for l in cluster:
+                    f.write('%s\t%d\n' % (l,cluster_num))
+                cluster_num += 1
+        f.close()
