@@ -75,6 +75,42 @@ def min_clusters_threshold_max(tree,threshold):
         clusters.append(list(leaves))
     return clusters
 
+# min_clusters_threshold_max, but all clusters must define a subtree
+def min_clusters_threshold_max_subtree(tree,threshold):
+    leaves = prep(tree)
+    clusters = []
+    for node in tree.postorder_node_iter():
+        # if I've already been handled, ignore me
+        if node.DELETED:
+            continue
+
+        # find my undeleted max distances to leaf
+        child_nodes = node.child_nodes()
+        if len(child_nodes) == 0:
+            node.left_dist = 0; node.right_dist = 0
+        else:
+            node.left_dist = max(child_nodes[0].left_dist,child_nodes[0].right_dist) + child_nodes[0].edge_length
+            node.right_dist = max(child_nodes[1].left_dist,child_nodes[1].right_dist) + child_nodes[1].edge_length
+
+            # if my kids are screwing things up, cut both
+            if node.left_dist + node.right_dist > threshold:
+                cluster_l = cut(child_nodes[0])
+                node.left_dist = 0
+                cluster_r = cut(child_nodes[1])
+                node.right_dist = 0
+
+                # add cluster
+                for cluster in (cluster_l,cluster_r):
+                    if len(cluster) != 0:
+                        clusters.append(cluster)
+                        for leaf in cluster:
+                            leaves.remove(leaf)
+
+    # add all remaining leaves to a single cluster
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
 # split leaves into minimum number of clusters such that the average leaf pairwise distance is below some threshold
 def min_clusters_threshold_avg(tree,threshold):
     leaves = prep(tree)
@@ -116,7 +152,47 @@ def min_clusters_threshold_avg(tree,threshold):
         clusters.append(list(leaves))
     return clusters
 
-METHODS = {'max':min_clusters_threshold_max, 'avg':min_clusters_threshold_avg}
+# min_clusters_threshold_avg, but all clusters must define a subtree
+def min_clusters_threshold_avg_subtree(tree,threshold):
+    leaves = prep(tree)
+    clusters = []
+    for node in tree.postorder_node_iter():
+        # if I've already been handled, ignore me
+        if node.DELETED:
+            continue
+
+        # find my undeleted max distances to leaf
+        child_nodes = node.child_nodes()
+        if len(child_nodes) == 0:
+            node.num_leaves = 1
+            node.total_dist = 0
+        else:
+            node.num_leaves = child_nodes[0].num_leaves + child_nodes[1].num_leaves
+            nl = child_nodes[0].num_leaves; nr = child_nodes[1].num_leaves
+            dl = float(child_nodes[0].total_dist); dr = float(child_nodes[1].total_dist)
+            el = child_nodes[0].edge_length; er = child_nodes[1].edge_length
+            node.total_dist = nr*dl + nl*dr + (nl*nr)*(el+er)
+
+            # if my kids are screwing things up, cut both
+            if node.total_dist/(nl*nr) > threshold:
+                cluster_l = cut(child_nodes[0])
+                node.left_dist = 0
+                cluster_r = cut(child_nodes[1])
+                node.right_dist = 0
+
+                # add cluster
+                for cluster in (cluster_l,cluster_r):
+                    if len(cluster) != 0:
+                        clusters.append(cluster)
+                        for leaf in cluster:
+                            leaves.remove(leaf)
+
+    # add all remaining leaves to a single cluster
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
+METHODS = {'max':min_clusters_threshold_max, 'avg':min_clusters_threshold_avg, 'max_subtree':min_clusters_threshold_max_subtree, 'avg_subtree':min_clusters_threshold_avg_subtree}
 if __name__ == "__main__":
     # parse user arguments
     from sys import stdin
