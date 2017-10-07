@@ -28,6 +28,7 @@ def check(tree):
 
 if __name__ == "__main__":
     from os import rename
+    from os.path import realpath
     from subprocess import call
     import argparse
     import dendropy
@@ -42,6 +43,6 @@ if __name__ == "__main__":
     print("Running all thresholds from 0 to max pairwise distance (%f) with increment %f on tree: %s" % (end_threshold,INCREMENT,args.input))
     while threshold < end_threshold:
         print("Threshold: %f" % threshold)
-        call(['../ClusterPickerII.py','-i',args.input,'-t',str(threshold),'-m',args.method])
+        call(['%s/ClusterPickerII.py' % '/'.join(realpath(__file__).split('/')[:-2]),'-i',args.input,'-t',str(threshold),'-m',args.method])
         rename('%s.tree1.list.txt' % args.input, '%s.%f.list.txt' % (args.input,threshold))
         threshold += INCREMENT
