@@ -124,6 +124,7 @@ def min_clusters_threshold_max_subtree(tree,threshold,support):
     return clusters
 
 # split leaves into minimum number of clusters such that the average leaf pairwise distance is below some threshold
+# I think this is incorrect because I choose to cut the child with larger total distance (not always correct)
 def min_clusters_threshold_avg(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
