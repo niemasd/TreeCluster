@@ -23,7 +23,7 @@ def cut(node):
         if descendant.DELETED:
             continue
         descendant.DELETED = True
-        descendant.left_dist = 0; descendant.right_dist = 0; descendant.edge_length = 0; descendant.num_leaves = 0
+        descendant.left_dist = 0; descendant.right_dist = 0; descendant.edge_length = 0; descendant.num_leaves = 0; descendant.total_dist = 0
         desc_children = descendant.child_nodes()
         if len(desc_children) == 0:
             cluster.append(descendant.taxon.label)
