@@ -148,7 +148,7 @@ def min_clusters_threshold_avg(tree,threshold,support):
             node.total_dist = nr*dl + nl*dr + (nl*nr)*(el+er)
 
             # if my kids are screwing things up, cut out the longer one
-            if node.total_dist/(nl*nr) > threshold:
+            if nl != 0 and nr != 0 and node.total_dist/(nl*nr) > threshold:
                 if dl > dr:
                     node.left_dist = 0; node.num_leaves -= child_nodes[0].num_leaves
                     cluster = cut(child_nodes[0])
@@ -191,7 +191,7 @@ def min_clusters_threshold_avg_subtree(tree,threshold,support):
             node.total_dist = nr*dl + nl*dr + (nl*nr)*(el+er)
 
             # if my kids are screwing things up, cut out the longer one
-            if node.total_dist/(nl*nr) > threshold:
+            if nl != 0 and nr != 0 and node.total_dist/(nl*nr) > threshold:
                 node.left_dist = 0; node.right_dist = 0; node.num_leaves = 0
                 cluster_l = cut(child_nodes[0])
                 cluster_r = cut(child_nodes[1])
