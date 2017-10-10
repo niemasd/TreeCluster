@@ -8,8 +8,8 @@ import seaborn as sns
 # settings
 sns.set_style("ticks")
 rcParams['font.family'] = 'serif'
-pal = {'max':'#0000FF', 'maxsubtree':'#FF0000'}
-handles = [Patch(color=pal['max'],label='Max'), Patch(color=pal['maxsubtree'],label='Max (Subtree)')]
+pal = {'max':'#0000FF', 'maxsubtree':'#FF0000', 'avgsubtree':'#00FF00'}
+handles = [Patch(color=pal['max'],label='Max'), Patch(color=pal['maxsubtree'],label='Max (Subtree)'), Patch(color=pal['avgsubtree'],label='Average (Subtree)')]
 
 # moving average
 def movingaverage(interval, window_size):
@@ -32,6 +32,7 @@ def read_data(f):
 # read data
 data_max = read_data('accuracy.8.clusters.max.csv')
 data_maxsubtree = read_data('accuracy.8.clusters.maxsubtree.csv')
+data_avgsubtree = read_data('accuracy.8.clusters.avgsubtree.csv')
 
 # plot
 fig = plt.figure()
@@ -52,6 +53,13 @@ for rep in data_maxsubtree:
 x,y = zip(*sorted(zip(x,y)))
 y_avg = movingaverage(y, 50)
 plt.plot(x,y_avg,color=pal['maxsubtree'])
+x = []; y = []
+for rep in data_avgsubtree:
+    x += data_avgsubtree[rep]['Recall']
+    y += data_avgsubtree[rep]['Precision']
+x,y = zip(*sorted(zip(x,y)))
+y_avg = movingaverage(y, 50)
+plt.plot(x,y_avg,color=pal['avgsubtree'])
 legend = plt.legend(handles=handles,bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., frameon=True)
 sns.plt.xlabel('Recall')
 sns.plt.ylabel('Precision')
