@@ -8,8 +8,8 @@ import seaborn as sns
 # settings
 sns.set_style("ticks")
 rcParams['font.family'] = 'serif'
-pal = {'max':'#0000FF', 'maxsubtree':'#FF0000', 'avgsubtree':'#00FF00'}
-handles = [Patch(color=pal['max'],label='Max'), Patch(color=pal['maxsubtree'],label='Max (Subtree)'), Patch(color=pal['avgsubtree'],label='Average (Subtree)')]
+pal = {'max':'#0000FF', 'maxsubtree':'#FF0000'}
+handles = [Patch(color=pal['max'],label='Max'), Patch(color=pal['maxsubtree'],label='Max (Subtree)')]
 
 # moving average
 def movingaverage(interval, window_size):
@@ -21,10 +21,15 @@ def read_data(f):
     data = {}
     for line in open(f).read().strip().splitlines()[1:]:
         parts = line.split(',')
-        if parts[0] not in data:
-            data[parts[0]] = {'Precision':[],'Recall':[]}
-        data[parts[0]]['Precision'].append(float(parts[-2]))
-        data[parts[0]]['Recall'].append(float(parts[-1]))
+        rep = parts[0]; TP = float(parts[2]); FP = float(parts[4]); FN = float(parts[5])
+        if rep not in data:
+            data[rep] = {'Precision':[],'Recall':[]}
+        if FP == 0:
+            precision = 1
+        else:
+            precision = TP/(TP+FP)
+        data[rep]['Precision'].append(precision)
+        data[rep]['Recall'].append(TP/(TP+FN))
     for rep in data:
         data[rep]['Recall'],data[rep]['Precision'] = zip(*sorted(zip(data[rep]['Recall'], data[rep]['Precision'])))
     return data
@@ -32,7 +37,6 @@ def read_data(f):
 # read data
 data_max = read_data('accuracy.8.clusters.max.csv')
 data_maxsubtree = read_data('accuracy.8.clusters.maxsubtree.csv')
-data_avgsubtree = read_data('accuracy.8.clusters.avgsubtree.csv')
 
 # plot
 fig = plt.figure()
@@ -53,13 +57,6 @@ for rep in data_maxsubtree:
 x,y = zip(*sorted(zip(x,y)))
 y_avg = movingaverage(y, 50)
 plt.plot(x,y_avg,color=pal['maxsubtree'])
-x = []; y = []
-for rep in data_avgsubtree:
-    x += data_avgsubtree[rep]['Recall']
-    y += data_avgsubtree[rep]['Precision']
-x,y = zip(*sorted(zip(x,y)))
-y_avg = movingaverage(y, 50)
-plt.plot(x,y_avg,color=pal['avgsubtree'])
 legend = plt.legend(handles=handles,bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., frameon=True)
 sns.plt.xlabel('Recall')
 sns.plt.ylabel('Precision')
