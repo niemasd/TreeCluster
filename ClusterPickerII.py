@@ -3,7 +3,7 @@
 Expansion of ClusterPicker (Manon Ragonnet & Emma Hodcroft):
 * The algorithms implemented in ClusterPicker were at least quadratic in time
   complexity, so they have been implemented in linear time here
-* ClusterPicker requires clusters to correspond to entire subtrees. We have
+* ClusterPicker requires clusters to correspond to entire clades. We have
   added algorithms that do not have this restriction (also linear-time)
 '''
 from math import log
@@ -87,8 +87,8 @@ def min_clusters_threshold_max(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-# min_clusters_threshold_max, but all clusters must define a subtree
-def min_clusters_threshold_max_subtree(tree,threshold,support):
+# min_clusters_threshold_max, but all clusters must define a clade
+def min_clusters_threshold_max_clade(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
     for node in tree.postorder_node_iter():
@@ -123,7 +123,7 @@ def min_clusters_threshold_max_subtree(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-METHODS = {'max':min_clusters_threshold_max, 'avg':min_clusters_threshold_avg, 'max_subtree':min_clusters_threshold_max_subtree, 'avg_subtree':min_clusters_threshold_avg_subtree}
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade}
 if __name__ == "__main__":
     # parse user arguments
     import argparse
