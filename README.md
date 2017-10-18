@@ -8,12 +8,6 @@ ClusterPicker-II was motivated by [ClusterPicker](https://github.com/emmahodcrof
 usage: ClusterPickerII.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT]
                           [-m METHOD]
 
-Expansion of ClusterPicker (Manon Ragonnet & Emma Hodcroft): * The algorithms
-implemented in ClusterPicker were at least quadratic in time complexity, so
-they have been implemented in linear time here * ClusterPicker requires
-clusters to correspond to entire clades. We have added algorithms that do not
-have this restriction (also linear-time)
-
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
