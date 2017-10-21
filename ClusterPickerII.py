@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # run algorithm
     for t,tree in enumerate(trees):
         clusters = METHODS[args.method.lower()](tree,args.threshold,args.support)
-        f = open('%s.tree%d.list.txt' % (args.input,t+1), 'w')
+        f = open('%s.tree%d.thresh%f.list.txt' % (args.input,t+1,args.threshold), 'w')
         f.write('SequenceName\tClusterNumber\n')
         cluster_num = 1
         for cluster in clusters:
