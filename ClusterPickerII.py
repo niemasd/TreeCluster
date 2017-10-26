@@ -39,7 +39,6 @@ def prep(tree,support):
     for node in tree.postorder_node_iter():
         node.DELETED = False
         child_nodes = node.child_nodes()
-        assert len(child_nodes) in {0,2}, "ERROR: Multifurcating tree. Resolve polytomies first"
         if len(child_nodes) == 0:
             leaves.add(node.taxon.label)
         if node.label is None:
@@ -148,7 +147,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--input', required=False, type=str, default='stdin', help="Input Tree File")
     parser.add_argument('-t', '--threshold', required=True, type=float, help="Length Threshold")
     parser.add_argument('-s', '--support', required=False, type=float, default=0, help="Branch Support Threshold")
-    parser.add_argument('-m', '--method', required=False, type=str, default='max', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
+    parser.add_argument('-m', '--method', required=False, type=str, default='max_clade', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
     args = parser.parse_args()
     assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
     assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
