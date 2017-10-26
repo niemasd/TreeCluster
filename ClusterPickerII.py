@@ -143,12 +143,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-i', '--input', required=False, type=str, default='stdin', help="Input Tree File")
     parser.add_argument('-t', '--threshold', required=True, type=float, help="Length Threshold")
-    parser.add_argument('-s', '--support', required=False, type=float, default=0, help="Branch Support Threshold")
+    parser.add_argument('-s', '--support', required=False, type=float, default=float('-inf'), help="Branch Support Threshold")
     parser.add_argument('-m', '--method', required=False, type=str, default='max_clade', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
     args = parser.parse_args()
     assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
     assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
-    assert args.support >= 0, "ERROR: Branch support must be at least 0"
+    assert args.support >= 0 or args.support == float('-inf'), "ERROR: Branch support must be at least 0"
     if args.input == 'stdin':
         from sys import stdin; infile = stdin
     else:
