@@ -134,14 +134,17 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--support', required=False, type=float, default=0, help="Branch Support Threshold")
     parser.add_argument('-m', '--method', required=False, type=str, default='max', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
     args = parser.parse_args()
+    assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
+    assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
+    assert args.support >= 0, "ERROR: Branch support must be at least 0"
     if args.input == 'stdin':
         from sys import stdin; infile = stdin
     else:
         infile = open(args.input)
     trees = [dendropy.Tree.get(data=line.strip(),schema='newick',preserve_underscores=True) for line in infile.read().strip().splitlines()]
-    assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
-    assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
-    assert args.support >= 0, "ERROR: Branch support must be at least 0"
+    for tree in trees:
+        tree.suppress_unifurcations()
+        tree.resolve_polytomies()
 
     # run algorithm
     for t,tree in enumerate(trees):
