@@ -44,9 +44,12 @@ def prep(tree,support):
         if node.label is None:
             node.label = 1.
         else:
-            node.label = float(node.label)
-            if node.label < support:
-                node.edge_length = float('inf') # don't allow low-support edges
+            try:
+                node.label = float(node.label)
+                if node.label < support:
+                    node.edge_length = float('inf') # don't allow low-support edges
+            except:
+                node.label = 100. # ignore internal node labels if they're not support values
     return leaves
 
 # split leaves into minimum number of clusters such that the maximum leaf pairwise distance is below some threshold
