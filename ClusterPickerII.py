@@ -23,66 +23,63 @@ def cut(node):
         if descendant.DELETED:
             continue
         descendant.DELETED = True
-        descendant.left_dist = 0; descendant.right_dist = 0; descendant.edge_length = 0
-        desc_children = descendant.child_nodes()
-        if len(desc_children) == 0:
-            cluster.append(descendant.taxon.label)
+        descendant.left_dist = 0; descendant.right_dist = 0; descendant.branch_length = 0
+        if descendant.is_terminal():
+            cluster.append(descendant.name)
         else:
-            for c in desc_children:
+            for c in descendant.clades:
                 descendants.put(c)
     return cluster
 
 # initialize properties of input tree and return set containing taxa of leaves
 def prep(tree,support):
-    tree.seed_node.edge_length = 0
+    tree.rooted = True
     leaves = set()
-    for node in tree.postorder_node_iter():
+    for node in tree.find_clades(order='postorder'):
+        assert len(node.clades) in {0,2}, "ERROR: Multifurcating tree. Resolve polytomies first"
         node.DELETED = False
-        if node.is_leaf():
-            leaves.add(node.taxon.label)
-        if node.label is None:
-            node.label = 100.
+        if node.is_terminal():
+            leaves.add(node.name)
         else:
             try:
-                node.label = float(node.label)
-                if node.label < support:
-                    node.edge_length = float('inf') # don't allow low-support edges
+                node.name = float(node.name)
             except:
-                node.label = 100. # ignore internal node labels if they're not support values
+                node.name = 100.
+            if node.name < support: # don't allow low-support edges
+                node.branch_length = float('inf')
     return leaves
 
 # split leaves into minimum number of clusters such that the maximum leaf pairwise distance is below some threshold
 def min_clusters_threshold_max(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
-    for node in tree.postorder_node_iter():
+    for node in tree.find_clades(order='postorder'):
         # if I've already been handled, ignore me
         if node.DELETED:
             continue
 
         # find my undeleted max distances to leaf
-        child_nodes = node.child_nodes()
-        if len(child_nodes) == 0:
+        if node.is_terminal():
             node.left_dist = 0; node.right_dist = 0
         else:
-            if child_nodes[0].DELETED and child_nodes[1].DELETED:
-                cut(node)
-            if child_nodes[0].DELETED:
+            if node.clades[0].DELETED and node.clades[1].DELETED:
+                cut(node); continue
+            if node.clades[0].DELETED:
                 node.left_dist = 0
             else:
-                node.left_dist = max(child_nodes[0].left_dist,child_nodes[0].right_dist) + child_nodes[0].edge_length
-            if child_nodes[1].DELETED:
+                node.left_dist = max(node.clades[0].left_dist,node.clades[0].right_dist) + node.clades[0].branch_length
+            if node.clades[1].DELETED:
                 node.right_dist = 0
             else:
-                node.right_dist = max(child_nodes[1].left_dist,child_nodes[1].right_dist) + child_nodes[1].edge_length
+                node.right_dist = max(node.clades[1].left_dist,node.clades[1].right_dist) + node.clades[1].branch_length
 
             # if my kids are screwing things up, cut out the longer one
             if node.left_dist + node.right_dist > threshold:
                 if node.left_dist > node.right_dist:
-                    cluster = cut(child_nodes[0])
+                    cluster = cut(node.clades[0])
                     node.left_dist = 0
                 else:
-                    cluster = cut(child_nodes[1])
+                    cluster = cut(node.clades[1])
                     node.right_dist = 0
 
                 # add cluster
@@ -100,32 +97,31 @@ def min_clusters_threshold_max(tree,threshold,support):
 def min_clusters_threshold_max_clade(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
-    for node in tree.postorder_node_iter():
+    for node in tree.find_clades(order='postorder'):
         # if I've already been handled, ignore me
         if node.DELETED:
             continue
 
         # find my undeleted max distances to leaf
-        child_nodes = node.child_nodes()
-        if len(child_nodes) == 0:
+        if node.is_terminal():
             node.left_dist = 0; node.right_dist = 0
         else:
-            if child_nodes[0].DELETED and child_nodes[1].DELETED:
-                cut(node)
-            if child_nodes[0].DELETED:
+            if node.clades[0].DELETED and node.clades[1].DELETED:
+                cut(node); continue
+            if node.clades[0].DELETED:
                 node.left_dist = 0
             else:
-                node.left_dist = max(child_nodes[0].left_dist,child_nodes[0].right_dist) + child_nodes[0].edge_length
-            if child_nodes[1].DELETED:
+                node.left_dist = max(node.clades[0].left_dist,node.clades[0].right_dist) + node.clades[0].branch_length
+            if node.clades[1].DELETED:
                 node.right_dist = 0
             else:
-                node.right_dist = max(child_nodes[1].left_dist,child_nodes[1].right_dist) + child_nodes[1].edge_length
+                node.right_dist = max(node.clades[1].left_dist,node.clades[1].right_dist) + node.clades[1].branch_length
 
             # if my kids are screwing things up, cut both
             if node.left_dist + node.right_dist > threshold:
-                cluster_l = cut(child_nodes[0])
+                cluster_l = cut(node.clades[0])
                 node.left_dist = 0
-                cluster_r = cut(child_nodes[1])
+                cluster_r = cut(node.clades[1])
                 node.right_dist = 0
 
                 # add cluster
@@ -144,7 +140,6 @@ METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_
 if __name__ == "__main__":
     # parse user arguments
     import argparse
-    import dendropy
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-i', '--input', required=False, type=str, default='stdin', help="Input Tree File")
     parser.add_argument('-t', '--threshold', required=True, type=float, help="Length Threshold")
@@ -158,10 +153,8 @@ if __name__ == "__main__":
         from sys import stdin; infile = stdin
     else:
         infile = open(args.input)
-    trees = [dendropy.Tree.get(data=line.strip(),schema='newick',preserve_underscores=True) for line in infile.read().strip().splitlines()]
-    for tree in trees:
-        tree.suppress_unifurcations()
-        tree.resolve_polytomies()
+    from Bio import Phylo
+    trees = [tree for tree in Phylo.parse(infile,'newick')]
 
     # run algorithm
     for t,tree in enumerate(trees):
