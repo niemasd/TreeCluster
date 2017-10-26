@@ -64,8 +64,16 @@ def min_clusters_threshold_max(tree,threshold,support):
         if len(child_nodes) == 0:
             node.left_dist = 0; node.right_dist = 0
         else:
-            node.left_dist = max(child_nodes[0].left_dist,child_nodes[0].right_dist) + child_nodes[0].edge_length
-            node.right_dist = max(child_nodes[1].left_dist,child_nodes[1].right_dist) + child_nodes[1].edge_length
+            if child_nodes[0].DELETED and child_nodes[1].DELETED:
+                cut(node)
+            if child_nodes[0].DELETED:
+                node.left_dist = 0
+            else:
+                node.left_dist = max(child_nodes[0].left_dist,child_nodes[0].right_dist) + child_nodes[0].edge_length
+            if child_nodes[1].DELETED:
+                node.right_dist = 0
+            else:
+                node.right_dist = max(child_nodes[1].left_dist,child_nodes[1].right_dist) + child_nodes[1].edge_length
 
             # if my kids are screwing things up, cut out the longer one
             if node.left_dist + node.right_dist > threshold:
@@ -101,8 +109,16 @@ def min_clusters_threshold_max_clade(tree,threshold,support):
         if len(child_nodes) == 0:
             node.left_dist = 0; node.right_dist = 0
         else:
-            node.left_dist = max(child_nodes[0].left_dist,child_nodes[0].right_dist) + child_nodes[0].edge_length
-            node.right_dist = max(child_nodes[1].left_dist,child_nodes[1].right_dist) + child_nodes[1].edge_length
+            if child_nodes[0].DELETED and child_nodes[1].DELETED:
+                cut(node)
+            if child_nodes[0].DELETED:
+                node.left_dist = 0
+            else:
+                node.left_dist = max(child_nodes[0].left_dist,child_nodes[0].right_dist) + child_nodes[0].edge_length
+            if child_nodes[1].DELETED:
+                node.right_dist = 0
+            else:
+                node.right_dist = max(child_nodes[1].left_dist,child_nodes[1].right_dist) + child_nodes[1].edge_length
 
             # if my kids are screwing things up, cut both
             if node.left_dist + node.right_dist > threshold:
