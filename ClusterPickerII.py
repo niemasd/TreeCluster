@@ -38,11 +38,10 @@ def prep(tree,support):
     leaves = set()
     for node in tree.postorder_node_iter():
         node.DELETED = False
-        child_nodes = node.child_nodes()
-        if len(child_nodes) == 0:
+        if node.is_leaf():
             leaves.add(node.taxon.label)
         if node.label is None:
-            node.label = 1.
+            node.label = 100.
         else:
             try:
                 node.label = float(node.label)
