@@ -44,7 +44,7 @@ def prep(tree,support):
             try:
                 node.name = float(node.name)
             except:
-                node.name = 0. # give edges without support values support 0
+                node.name = 100. # give edges without support values support 100
             if node.name < support: # don't allow low-support edges
                 node.branch_length = float('inf')
     return leaves
