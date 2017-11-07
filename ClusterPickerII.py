@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 '''
-Expansion of ClusterPicker (Manon Ragonnet & Emma Hodcroft):
-* The algorithms implemented in ClusterPicker were at least quadratic in time
-  complexity, so they have been implemented in linear time here
-* ClusterPicker requires clusters to correspond to entire clades. We have
-  added algorithms that do not have this restriction (also linear-time)
+Given a tree
 '''
 from math import log
 from queue import Queue
