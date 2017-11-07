@@ -23,18 +23,13 @@ optional arguments:
 
 ## Clustering Methods
 * **Max Clade:** Cluster the leaves such that the following conditions hold for each cluster:
-
-    i. The maximum pairwise distance between leaves in the cluster is below *t*
-
-    ii. Leaves cannot be connected by branches with support below *s*
-
-    iii. The leaves in the cluster must define a clade in *T*
+    1. The maximum pairwise distance between leaves in the cluster is below *t*
+    2. Leaves cannot be connected by branches with support below *s*
+    3. The leaves in the cluster must define a clade in *T*
 
 * **Max:** Cluster the leaves such that the following conditions hold for each cluster:
-
-    i. The maximum pairwise distance between leaves in the cluster is below *t*
-    
-    ii. Leaves cannot be connected by branches with support below *s*
+    1. The maximum pairwise distance between leaves in the cluster is below *t*
+    2. Leaves cannot be connected by branches with support below *s*
 
 ## Requirements
 * [Biopython](http://biopython.org/)
