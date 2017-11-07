@@ -1,5 +1,5 @@
 # ClusterPicker-II
-ClusterPicker-II is a tool that, given a tree *T* (Newick format) and a distance threshold *t*, finds the minimum number of clusters of the leaves of *T* such that some user-specific constraint is met in each cluster. The user can also specify a branch support threshold *s* such that no pair of leaves in any cluster can be connected by branches with support below *s*. The default constraint is that the diameter of each cluster cannot exceed *t* (i.e., for each cluster, all pairs of leaves in the cluster are at most *t* apart) and that clusters must form clades in the tree.
+ClusterPicker-II is a tool that, given a tree *T* (Newick format) and a distance threshold *t*, finds the minimum number of clusters of the leaves of *T* such that some user-specific constraint is met in each cluster. The user can also specify a branch support threshold *s* such that no pair of leaves in any cluster can be connected by branches with support below *s*. The default method is "Max Clade" (see [Clustering Methods](#clustering-methods)).
 
 ClusterPicker-II was motivated by [ClusterPicker](https://github.com/emmahodcroft/cluster-picker-and-cluster-matcher).
 
