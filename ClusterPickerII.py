@@ -136,6 +136,49 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
+# clusters must define clades, and clades are joined if at least one pair of leaves across the two clades are within the threshold distance
+def min_clusters_threshold_single_linkage_clade(tree,threshold,support):
+    leaves = prep(tree,support)
+    clusters = []
+    for node in tree.find_clades(order='postorder'):
+        # if I've already been handled, ignore me
+        if node.DELETED:
+            continue
+
+        # find my undeleted min distance to leaf
+        if node.is_terminal():
+            node.left_dist = 0; node.right_dist = 0
+        else:
+            if node.clades[0].DELETED and node.clades[1].DELETED:
+                cut(node); continue
+            if node.clades[0].DELETED:
+                node.left_dist = 0
+            else:
+                node.left_dist = min(node.clades[0].left_dist,node.clades[0].right_dist) + node.clades[0].branch_length
+            if node.clades[1].DELETED:
+                node.right_dist = 0
+            else:
+                node.right_dist = min(node.clades[1].left_dist,node.clades[1].right_dist) + node.clades[1].branch_length
+
+            # if my kids are screwing things up, cut both
+            if node.left_dist + node.right_dist > threshold:
+                cluster_l = cut(node.clades[0])
+                node.left_dist = 0
+                cluster_r = cut(node.clades[1])
+                node.right_dist = 0
+
+                # add cluster
+                for cluster in (cluster_l,cluster_r):
+                    if len(cluster) != 0:
+                        clusters.append(cluster)
+                        for leaf in cluster:
+                            leaves.remove(leaf)
+
+    # add all remaining leaves to a single cluster
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
 # min_clusters_threshold_max, but all clusters must define a clade
 def min_clusters_threshold_max_clade(tree,threshold,support):
     leaves = prep(tree,support)
@@ -179,7 +222,7 @@ def min_clusters_threshold_max_clade(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade}
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade}
 if __name__ == "__main__":
     # parse user arguments
     import argparse

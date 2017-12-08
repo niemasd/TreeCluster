@@ -36,5 +36,10 @@ optional arguments:
     2. Leaves cannot be connected by branches with support below *s*
     3. The leaves in the cluster must define a clade in *T*
 
+* **Single Linkage Clade:** Cluster the leaves such that the following conditions hold for each cluster:
+    1. The leaves in the cluster must define a clade in *T*
+    2. For all internal nodes *u* in the clade defined by the cluster, a leaf in the left subclade of *u* must be within *t* distance of a leaf in the right subclade of *u*
+    3. Leaves cannot be connected by branches with support below *s*
+
 ## Requirements
 * [Biopython](http://biopython.org/)
