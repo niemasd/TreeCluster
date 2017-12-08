@@ -5,6 +5,27 @@ Given a tree
 from math import log
 from queue import Queue
 
+# merge two sorted lists into a sorted list
+def merge_sorted_lists(x,y):
+    out = []; i = 0; j = 0
+    while i < len(x) and j < len(y):
+        if x[i] < y[j]:
+            out.append(x[i]); i+= 1
+        else:
+            out.append(y[j]); j += 1
+    while i < len(x):
+        out.append(x[i]); i += 1
+    while j < len(y):
+        out.append(y[j]); j += 1
+    return out
+
+# get the median of a sorted list
+def median(x):
+    if len(x) % 2 != 0:
+        return x[int(len(x)/2)]
+    else:
+        return (x[int(len(x)/2)]+x[int(len(x)/2)-1])/2
+
 # convert p-distance to Jukes-Cantor distance
 def p_to_jc(d,seq_type):
     b = {'dna':3./4., 'protein':19./20.}[seq_type]
@@ -20,7 +41,6 @@ def cut(node):
             continue
         descendant.DELETED = True
         descendant.left_dist = 0; descendant.right_dist = 0; descendant.branch_length = 0
-        descendant.total_pair_dist = 0; descendant.total_leaf_dist = 0; descendant.num_leaves = 0
         if descendant.is_terminal():
             cluster.append(descendant.name)
         else:
@@ -88,6 +108,38 @@ def min_clusters_threshold_max(tree,threshold,support):
     # add all remaining leaves to a single cluster
     if len(leaves) != 0:
         clusters.append(list(leaves))
+    return clusters
+
+# median leaf pairwise distance cannot exceed threshold, and clusters must define clades
+def min_clusters_threshold_med_clade(tree,threshold,support):
+    leaves = prep(tree,support)
+    # bottom-up traversal to compute median pairwise distances
+    for node in tree.find_clades(order='postorder'):
+        if node.is_terminal():
+            node.med_pair_dist = 0
+            node.leaf_dists = [0]
+            node.pair_dists = []
+        else:
+            l_leaf_dists = [d + node.clades[0].branch_length for d in node.clades[0].leaf_dists]
+            r_leaf_dists = [d + node.clades[1].branch_length for d in node.clades[1].leaf_dists]
+            node.leaf_dists = merge_sorted_lists(l_leaf_dists,r_leaf_dists)
+            node.pair_dists = merge_sorted_lists(node.clades[0].pair_dists, node.clades[1].pair_dists)
+            for l in l_leaf_dists:
+                node.pair_dists = merge_sorted_lists(node.pair_dists, [l+r for r in r_leaf_dists])
+            if node.pair_dists[-1] == float('inf'):
+                node.med_pair_dist = float('inf')
+            else:
+                node.med_pair_dist = median(node.pair_dists)
+
+    # top-down traversal to cut out clusters
+    clusters = []
+    traverse = Queue(); traverse.put(tree.root)
+    while not traverse.empty():
+        node = traverse.get()
+        if node.med_pair_dist <= threshold:
+            clusters.append(cut(node))
+        else:
+            traverse.put(node.clades[0]); traverse.put(node.clades[1])
     return clusters
 
 # average leaf pairwise distance cannot exceed threshold, and clusters must define clades
@@ -202,7 +254,7 @@ def min_clusters_threshold_max_clade(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade}
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade}
 if __name__ == "__main__":
     # parse user arguments
     import argparse
