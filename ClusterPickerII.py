@@ -95,7 +95,6 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
     leaves = prep(tree,support)
     # bottom-up traversal to compute average pairwise distances
     for node in tree.find_clades(order='postorder'):
-        # find my undeleted total distances to leaves
         node.total_pair_dist = 0; node.total_leaf_dist = 0
         if node.is_terminal():
             node.num_leaves = 1
@@ -116,14 +115,6 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
         else:
             traverse.put(node.clades[0]); traverse.put(node.clades[1])
     return clusters
-
-# median leaf pairwise distance cannot exceed threshold, and clusters must define clades
-def min_clusters_threshold_med_clade(tree,threshold,support):
-    leaves = prep(tree,support)
-    clusters = []
-    for node in tree.find_clades(order='postorder'):
-        # if I've already been handled, ignore me
-        pass
 
 # clusters must define clades, and clades are joined if at least one pair of leaves across the two clades are within the threshold distance
 def min_clusters_threshold_single_linkage_clade(tree,threshold,support):
