@@ -20,6 +20,7 @@ def cut(node):
             continue
         descendant.DELETED = True
         descendant.left_dist = 0; descendant.right_dist = 0; descendant.branch_length = 0
+        descendant.total_pair_dist = 0; descendant.total_leaf_dist = 0; descendant.num_leaves = 0
         if descendant.is_terminal():
             cluster.append(descendant.name)
         else:
@@ -89,6 +90,52 @@ def min_clusters_threshold_max(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
+# average leaf pairwise distance cannot exceed threshold, and clusters must define clades
+def min_clusters_threshold_avg_clade(tree,threshold,support):
+    leaves = prep(tree,support)
+    clusters = []
+    for node in tree.find_clades(order='postorder'):
+        # if I've already been handled, ignore me
+        if node.DELETED:
+            continue
+
+        # find my undeleted total distances to leaves
+        node.total_pair_dist = 0; node.total_leaf_dist = 0
+        if node.is_terminal():
+            node.num_leaves = 1
+        else:
+            node.num_leaves = 0
+            if node.clades[0].DELETED and node.clades[1].DELETED:
+                cut(node); continue
+            if not node.clades[0].DELETED:
+                node.num_leaves += node.clades[0].num_leaves
+                node.total_pair_dist += node.clades[0].total_pair_dist
+                node.total_leaf_dist += (node.clades[0].total_leaf_dist + node.clades[0].branch_length*node.clades[0].num_leaves)
+            if not node.clades[1].DELETED:
+                node.num_leaves += node.clades[1].num_leaves
+                node.total_pair_dist += node.clades[1].total_pair_dist
+                node.total_leaf_dist += (node.clades[1].total_leaf_dist + node.clades[1].branch_length*node.clades[1].num_leaves)
+            if (not node.clades[0].DELETED) and (not node.clades[1].DELETED):
+                node.total_pair_dist += (node.clades[0].total_leaf_dist*node.clades[1].num_leaves + node.clades[1].total_leaf_dist*node.clades[0].num_leaves)
+            num_pairs = node.num_leaves*(node.num_leaves-1)/2
+            if num_pairs == 0:
+                avg_pair_dist = 0
+            else:
+                avg_pair_dist = node.total_pair_dist/num_pairs
+            if avg_pair_dist > threshold:
+                cluster_l = cut(node.clades[0])
+                cluster_r = cut(node.clades[1])
+                cut(node)
+                for cluster in (cluster_l,cluster_r):
+                    clusters.append(cluster)
+                    for leaf in cluster:
+                        leaves.remove(leaf)
+
+    # add all remaining leaves to a single cluster
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
 # min_clusters_threshold_max, but all clusters must define a clade
 def min_clusters_threshold_max_clade(tree,threshold,support):
     leaves = prep(tree,support)
@@ -132,7 +179,7 @@ def min_clusters_threshold_max_clade(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade}
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade}
 if __name__ == "__main__":
     # parse user arguments
     import argparse
