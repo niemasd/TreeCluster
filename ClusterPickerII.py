@@ -3,10 +3,10 @@
 Given a tree
 '''
 from math import log
-from queue import Queue
+from queue import PriorityQueue,Queue
 
 # merge two sorted lists into a sorted list
-def merge_sorted_lists(x,y):
+def merge_two_sorted_lists(x,y):
     out = []; i = 0; j = 0
     while i < len(x) and j < len(y):
         if x[i] < y[j]:
@@ -17,6 +17,20 @@ def merge_sorted_lists(x,y):
         out.append(x[i]); i += 1
     while j < len(y):
         out.append(y[j]); j += 1
+    return out
+
+# merge multiple sorted lists into a sorted list
+def merge_multi_sorted_lists(lists):
+    pq = PriorityQueue()
+    for l in range(len(lists)):
+        if len(lists[l]) != 0:
+            pq.put((lists[l][0],l))
+    inds = [1 for _ in range(len(lists))]
+    out = []
+    while not pq.empty():
+        d,l = pq.get(); out.append(d)
+        if inds[l] < len(lists[l]):
+            pq.put((lists[l][inds[l]],l)); l += 1
     return out
 
 # get the median of a sorted list
@@ -122,10 +136,8 @@ def min_clusters_threshold_med_clade(tree,threshold,support):
         else:
             l_leaf_dists = [d + node.clades[0].branch_length for d in node.clades[0].leaf_dists]
             r_leaf_dists = [d + node.clades[1].branch_length for d in node.clades[1].leaf_dists]
-            node.leaf_dists = merge_sorted_lists(l_leaf_dists,r_leaf_dists)
-            node.pair_dists = merge_sorted_lists(node.clades[0].pair_dists, node.clades[1].pair_dists)
-            for l in l_leaf_dists:
-                node.pair_dists = merge_sorted_lists(node.pair_dists, [l+r for r in r_leaf_dists])
+            node.leaf_dists = merge_two_sorted_lists(l_leaf_dists,r_leaf_dists)
+            node.pair_dists = merge_multi_sorted_lists([node.clades[0].pair_dists,node.clades[1].pair_dists] + [[l+r for r in r_leaf_dists] for l in l_leaf_dists])
             if node.pair_dists[-1] == float('inf'):
                 node.med_pair_dist = float('inf')
             else:
