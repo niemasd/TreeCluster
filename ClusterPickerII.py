@@ -134,7 +134,11 @@ def min_clusters_threshold_med_clade(tree,threshold,support):
             l_leaf_dists = [d + node.clades[0].branch_length for d in node.clades[0].leaf_dists]
             r_leaf_dists = [d + node.clades[1].branch_length for d in node.clades[1].leaf_dists]
             node.leaf_dists = merge_two_sorted_lists(l_leaf_dists,r_leaf_dists)
-            node.pair_dists = merge_multi_sorted_lists([node.clades[0].pair_dists,node.clades[1].pair_dists] + [[l+r for r in r_leaf_dists] for l in l_leaf_dists])
+            if len(l_leaf_dists) < len(r_leaf_dists):
+                across_leaf_dists = [[l+r for r in r_leaf_dists] for l in l_leaf_dists]
+            else:
+                across_leaf_dists = [[l+r for l in l_leaf_dists] for r in r_leaf_dists]
+            node.pair_dists = merge_multi_sorted_lists([node.clades[0].pair_dists,node.clades[1].pair_dists] + across_leaf_dists)
             if node.pair_dists[-1] == float('inf'):
                 node.med_pair_dist = float('inf')
             else:
