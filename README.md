@@ -39,6 +39,12 @@ optional arguments:
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
+* **Med Clade:** Cluster the leaves such that the following conditions hold for each cluster:
+    1. The median pairwise distance between leaves in the cluster is below *t*
+    2. Leaves cannot be connected by branches with support below *s*
+    3. The leaves in the cluster must define a clade in *T*
+    * For a tree with *n* leaves, this algorithm is O(*n*² log *n*) in the worst case
+
 * **Single Linkage Clade:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The leaves in the cluster must define a clade in *T*
     2. For all internal nodes *u* in the clade defined by the cluster, a leaf in the left subclade of *u* must be within *t* distance of a leaf in the right subclade of *u*
