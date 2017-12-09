@@ -8,6 +8,8 @@ ClusterPicker-II was motivated by [ClusterPicker](https://github.com/emmahodcrof
 usage: ClusterPickerII.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT]
                           [-m METHOD]
 
+Given a tree
+
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
@@ -17,8 +19,8 @@ optional arguments:
   -s SUPPORT, --support SUPPORT
                         Branch Support Threshold (default: -inf)
   -m METHOD, --method METHOD
-                        Clustering Method (options: avg_clade, max, max_clade)
-                        (default: max_clade)
+                        Clustering Method (options: avg_clade, max, max_clade,
+                        med_clade, single_linkage_clade) (default: max_clade)
 ```
 
 ## Clustering Methods
