@@ -143,6 +143,8 @@ def min_clusters_threshold_med_clade(tree,threshold,support):
                 node.med_pair_dist = float('inf')
             else:
                 node.med_pair_dist = median(node.pair_dists)
+            for c in (node.clades[0],node.clades[1]):
+                del c.leaf_dists; del c.pair_dists
 
     # top-down traversal to cut out clusters
     clusters = []
