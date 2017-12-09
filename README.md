@@ -8,8 +8,6 @@ ClusterPicker-II was motivated by [ClusterPicker](https://github.com/emmahodcrof
 usage: ClusterPickerII.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT]
                           [-m METHOD]
 
-Given a tree
-
 optional arguments:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT

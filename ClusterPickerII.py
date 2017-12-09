@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-'''
-Given a tree
-'''
 from math import log
 from queue import PriorityQueue,Queue
 
