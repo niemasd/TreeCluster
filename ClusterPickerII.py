@@ -70,10 +70,10 @@ def prep(tree,support):
             leaves.add(node.name)
         else:
             try:
-                node.name = float(node.name)
+                node.confidence = float(node.confidence)
             except:
-                node.name = 100. # give edges without support values support 100
-            if node.name < support: # don't allow low-support edges
+                node.confidence = 100. # give edges without support values support 100
+            if node.confidence < support: # don't allow low-support edges
                 node.branch_length = float('inf')
     return leaves
 
