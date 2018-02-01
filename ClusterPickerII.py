@@ -269,12 +269,61 @@ def min_clusters_threshold_max_clade(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade}
+# cut all branches longer than the threshold
+def length(tree,threshold,support):
+    leaves = prep(tree,support)
+    clusters = []
+    for node in tree.find_clades(order='postorder'):
+        # if I've already been handled, ignore me
+        if node.DELETED:
+            continue
+
+        # if i'm screwing things up, cut me
+        if node.branch_length is not None and node.branch_length > threshold:
+            cluster = cut(node)
+            if len(cluster) != 0:
+                clusters.append(cluster)
+                for leaf in cluster:
+                    leaves.remove(leaf)
+
+    # add all remaining leaves to a single cluster
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
+# same as length, and clusters must define a clade
+def length_clade(tree,threshold,support):
+    leaves = prep(tree,support)
+    clusters = []
+    for node in tree.find_clades(order='postorder'):
+        # if I've already been handled, ignore me
+        if node.DELETED or node.is_terminal():
+            continue
+
+        # if either kid is screwing things up, cut both
+        if node.clades[0].branch_length > threshold or node.clades[1].branch_length > threshold:
+            cluster_l = cut(node.clades[0])
+            cluster_r = cut(node.clades[1])
+
+            # add clusters
+            for cluster in (cluster_l,cluster_r):
+                if len(cluster) != 0:
+                    clusters.append(cluster)
+                    for leaf in cluster:
+                        leaves.remove(leaf)
+
+    # add all remaining leaves to a single cluster
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade, 'length':length, 'length_clade':length_clade}
 if __name__ == "__main__":
     # parse user arguments
     import argparse
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-i', '--input', required=False, type=str, default='stdin', help="Input Tree File")
+    parser.add_argument('-o', '--output', required=False, type=str, default='stdout', help="Output File")
     parser.add_argument('-t', '--threshold', required=True, type=float, help="Length Threshold")
     parser.add_argument('-s', '--support', required=False, type=float, default=float('-inf'), help="Branch Support Threshold")
     parser.add_argument('-m', '--method', required=False, type=str, default='max_clade', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
@@ -286,20 +335,23 @@ if __name__ == "__main__":
         from sys import stdin; infile = stdin
     else:
         infile = open(args.input)
+    if args.output == 'stdout':
+        from sys import stdout; outfile = stdout
+    else:
+        outfile = open(args.output,'w')
     from Bio import Phylo
     trees = [tree for tree in Phylo.parse(infile,'newick')]
 
     # run algorithm
     for t,tree in enumerate(trees):
         clusters = METHODS[args.method.lower()](tree,args.threshold,args.support)
-        f = open('%s.tree_%d.method_%s.thresh_%f.list.txt' % (args.input,t+1,args.method.lower(),args.threshold), 'w')
-        f.write('SequenceName\tClusterNumber\n')
+        outfile.write('SequenceName\tClusterNumber\n')
         cluster_num = 1
         for cluster in clusters:
             if len(cluster) == 1:
-                f.write('%s\t-1\n' % list(cluster)[0])
+                outfile.write('%s\t-1\n' % list(cluster)[0])
             else:
                 for l in cluster:
-                    f.write('%s\t%d\n' % (l,cluster_num))
+                    outfile.write('%s\t%d\n' % (l,cluster_num))
                 cluster_num += 1
-        f.close()
+        outfile.close()
