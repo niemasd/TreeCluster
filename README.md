@@ -23,17 +23,6 @@ optional arguments:
 ```
 
 ## Clustering Methods
-* **Max Clade:** Cluster the leaves such that the following conditions hold for each cluster:
-    1. The maximum pairwise distance between leaves in the cluster is below *t*
-    2. Leaves cannot be connected by branches with support below *s*
-    3. The leaves in the cluster must define a clade in *T*
-    * For a tree with *n* leaves, this algorithm is O(*n*)
-
-* **Max:** Cluster the leaves such that the following conditions hold for each cluster:
-    1. The maximum pairwise distance between leaves in the cluster is below *t*
-    2. Leaves cannot be connected by branches with support below *s*
-    * For a tree with *n* leaves, this algorithm is O(*n*)
-
 * **Avg Clade:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The average pairwise distance between leaves in the cluster is below *t*
     2. Leaves cannot be connected by branches with support below *s*
@@ -51,11 +40,22 @@ optional arguments:
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
+* **Max:** Cluster the leaves such that the following conditions hold for each cluster:
+    1. The maximum pairwise distance between leaves in the cluster is below *t*
+    2. Leaves cannot be connected by branches with support below *s*
+    * For a tree with *n* leaves, this algorithm is O(*n*)
+
+* **Max Clade:** Cluster the leaves such that the following conditions hold for each cluster:
+    1. The maximum pairwise distance between leaves in the cluster is below *t*
+    2. Leaves cannot be connected by branches with support below *s*
+    3. The leaves in the cluster must define a clade in *T*
+    * For a tree with *n* leaves, this algorithm is O(*n*)
+
 * **Med Clade:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The median pairwise distance between leaves in the cluster is below *t*
     2. Leaves cannot be connected by branches with support below *s*
     3. The leaves in the cluster must define a clade in *T*
-    * For a tree with *n* leaves, this algorithm is O(*n*² log *n*) in the worst case
+    * For a tree with *n* leaves, this algorithm is O(*n*Â² log *n*) in the worst case
 
 * **Single Linkage Clade:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The leaves in the cluster must define a clade in *T*
