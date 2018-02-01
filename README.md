@@ -17,8 +17,9 @@ optional arguments:
   -s SUPPORT, --support SUPPORT
                         Branch Support Threshold (default: -inf)
   -m METHOD, --method METHOD
-                        Clustering Method (options: avg_clade, max, max_clade,
-                        med_clade, single_linkage_clade) (default: max_clade)
+                        Clustering Method (options: avg_clade, length,
+                        length_clade, max, max_clade, med_clade,
+                        single_linkage_clade) (default: max_clade)
 ```
 
 ## Clustering Methods
@@ -35,6 +36,17 @@ optional arguments:
 
 * **Avg Clade:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The average pairwise distance between leaves in the cluster is below *t*
+    2. Leaves cannot be connected by branches with support below *s*
+    3. The leaves in the cluster must define a clade in *T*
+    * For a tree with *n* leaves, this algorithm is O(*n*)
+
+* **Length:** Cluster the leaves such that the following conditions hold for each cluster:
+    1. The cluster does not contain any edges above length *t*
+    2. Leaves cannot be connected by branches with support below *s*
+    * For a tree with *n* leaves, this algorithm is O(*n*)
+
+* **Length Clade:** Cluster the leaves such that the following conditions hold for each cluster:
+    1. The cluster does not contain any edges above length *t*
     2. Leaves cannot be connected by branches with support below *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
