@@ -317,7 +317,33 @@ def length_clade(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade, 'length':length, 'length_clade':length_clade}
+# cut tree at threshold distance from root (clusters will be clades by definition) (ignores support threshold if branch is below cutting point)
+def root_dist(tree,threshold,support):
+    leaves = prep(tree,support)
+    clusters = []
+    for node in tree.find_clades(order='preorder'):
+        # if I've already been handled, ignore me
+        if node.DELETED:
+            continue
+        for c in node.clades:
+            c.parent = node
+        if not hasattr(node,'parent'):
+            node.root_dist = 0
+        else:
+            node.root_dist = node.parent.root_dist + node.branch_length
+        if node.root_dist > threshold:
+            cluster = cut(node)
+            if len(cluster) != 0:
+                clusters.append(cluster)
+                for leaf in cluster:
+                    leaves.remove(leaf)
+
+    # add all remaining leaves to a single cluster
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist}
 if __name__ == "__main__":
     # parse user arguments
     import argparse
