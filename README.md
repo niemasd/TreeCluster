@@ -1,11 +1,11 @@
-# ClusterPicker-II
-ClusterPicker-II is a tool that, given a tree *T* (Newick format) and a distance threshold *t*, finds the minimum number of clusters of the leaves of *T* such that some user-specific constraint is met in each cluster. The user can also specify a branch support threshold *s* such that no pair of leaves in any cluster can be connected by branches with support below *s*. The default method is "Max Clade" (see [Clustering Methods](#clustering-methods)).
+# TreeCluster
+TreeCluster is a tool that, given a tree *T* (Newick format) and a distance threshold *t*, finds the minimum number of clusters of the leaves of *T* such that some user-specific constraint is met in each cluster. The user can also specify a branch support threshold *s* such that no pair of leaves in any cluster can be connected by branches with support below *s*. The default method is "Max Clade" (see [Clustering Methods](#clustering-methods)).
 
-ClusterPicker-II was motivated by [ClusterPicker](https://github.com/emmahodcroft/cluster-picker-and-cluster-matcher).
+TreeCluster was motivated by [ClusterPicker](https://github.com/emmahodcroft/cluster-picker-and-cluster-matcher).
 
 ## Usage
 ```bash
-usage: ClusterPickerII.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT]
+usage: TreeCluster.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT]
                           [-m METHOD]
 
 optional arguments:
