@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from Bio import Phylo
 from math import log
 from queue import PriorityQueue,Queue
 
@@ -64,8 +65,22 @@ def prep(tree,support):
     tree.rooted = True
     leaves = set()
     for node in tree.find_clades(order='postorder'):
-        assert len(node.clades) in {0,2}, "ERROR: Multifurcating tree. Resolve polytomies first"
         node.DELETED = False
+        if len(node.clades) == 1: # resolve unifurcations
+            child = node.clades[0]
+            node.branch_length += child.branch_length # update branch length
+            if node.name is None:
+                node.name = child.name # update name (if applicable)
+            if node.confidence is None or node.confidence > child.confidence:
+                node.confidence = child.confidence # update confidence (if applicable)
+            if node.comment is None:
+                node.comment = child.comment # update comment (if applicable)
+            node.clades = child.clades # update children
+        while len(node.clades) > 2: # resolve polytomy
+            c1 = node.clades.pop(); c2 = node.clades.pop()
+            newnode = Phylo.Newick.BaseTree.Clade(branch_length=0, clades=[c1,c2])
+            newnode.DELETED = False
+            node.clades.append(newnode)
         if node.is_terminal():
             leaves.add(node.name)
         else:
@@ -365,7 +380,6 @@ if __name__ == "__main__":
         from sys import stdout; outfile = stdout
     else:
         outfile = open(args.output,'w')
-    from Bio import Phylo
     trees = [tree for tree in Phylo.parse(infile,'newick')]
 
     # run algorithm
