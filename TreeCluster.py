@@ -394,4 +394,4 @@ if __name__ == "__main__":
                 for l in cluster:
                     outfile.write('%s\t%d\n' % (l,cluster_num))
                 cluster_num += 1
-        outfile.close()
+    outfile.close()
