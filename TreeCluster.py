@@ -319,7 +319,7 @@ def argmax_clusters(method,tree,threshold,support):
     from copy import deepcopy
     assert threshold > 0, "Threshold must be positive"
     #thresholds = pairwise_dists_below_thresh(deepcopy(tree),threshold)
-    thresholds = [i*threshold/NUM_THRESH for i in range(NUM_THRESH)]
+    thresholds = [i*threshold/NUM_THRESH for i in range(NUM_THRESH+1)]
     best = None; best_num = -1; best_t = -1
     for i,t in enumerate(thresholds):
         print("%s%%"%str(i*100/len(thresholds)).rstrip('0'),end='\r',file=stderr)
