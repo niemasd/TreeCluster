@@ -322,7 +322,7 @@ def argmax_clusters(method,tree,threshold,support):
     thresholds = [i*threshold/NUM_THRESH for i in range(NUM_THRESH)]
     best = None; best_num = -1; best_t = -1
     for i,t in enumerate(thresholds):
-        print("%f percent"%(i*100/len(thresholds)),end='\r',file=stderr)
+        print("%s%%"%str(i*100/len(thresholds)).rstrip('0'),end='\r',file=stderr)
         clusters = method(deepcopy(tree),t,support)
         num_non_singleton = len([c for c in clusters if len(c) > 1])
         if num_non_singleton > best_num:
