@@ -2,6 +2,8 @@
 from Bio import Phylo
 from math import log
 from queue import PriorityQueue,Queue
+from sys import stderr
+NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
 
 # merge two sorted lists into a sorted list
 def merge_two_sorted_lists(x,y):
@@ -91,6 +93,34 @@ def prep(tree,support):
             if node.confidence < support: # don't allow low-support edges
                 node.branch_length = float('inf')
     return leaves
+
+# return a sorted list of all unique pairwise leaf distances <= a given threshold
+def pairwise_dists_below_thresh(tree,threshold):
+    pairwise_dists = set()
+    for node in tree.find_clades(order='postorder'):
+        if node.is_terminal():
+            node.leaf_dists = {0}; node.min_leaf_dist = 0
+        else:
+            for i in range(len(node.clades)-1):
+                c1 = node.clades[i]
+                for j in range(i+1,len(node.clades)):
+                    c2 = node.clades[j]
+                    for d1 in c1.leaf_dists:
+                        for d2 in c2.leaf_dists:
+                            pd = d1 + c1.branch_length + d2 + c2.branch_length
+                            if pd <= threshold:
+                                pairwise_dists.add(pd)
+            node.leaf_dists = set(); node.min_leaf_dist = float('inf')
+            for c in node.clades:
+                if c.min_leaf_dist + c.branch_length > threshold:
+                    continue
+                for d in c.leaf_dists:
+                    nd = d+c.branch_length
+                    if nd < threshold:
+                        node.leaf_dists.add(nd)
+                    if nd < node.min_leaf_dist:
+                        node.min_leaf_dist = nd
+    return sorted(pairwise_dists)
 
 # split leaves into minimum number of clusters such that the maximum leaf pairwise distance is below some threshold
 def min_clusters_threshold_max(tree,threshold,support):
@@ -284,6 +314,22 @@ def min_clusters_threshold_max_clade(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
+# pick the threshold between 0 and "threshold" that maximizes number of (non-singleton) clusters
+def argmax_clusters(method,tree,threshold,support):
+    from copy import deepcopy
+    assert threshold > 0, "Threshold must be positive"
+    #thresholds = pairwise_dists_below_thresh(deepcopy(tree),threshold)
+    thresholds = [i*threshold/NUM_THRESH for i in range(NUM_THRESH)]
+    best = None; best_num = -1; best_t = -1
+    for i,t in enumerate(thresholds):
+        print("%f percent"%(i*100/len(thresholds)),end='\r',file=stderr)
+        clusters = method(deepcopy(tree),t,support)
+        num_non_singleton = len([c for c in clusters if len(c) > 1])
+        if num_non_singleton > best_num:
+            best = clusters; best_num = num_non_singleton; best_t = t
+    print("\nBest Threshold: %f"%best_t,file=stderr)
+    return best
+
 # cut all branches longer than the threshold
 def length(tree,threshold,support):
     leaves = prep(tree,support)
@@ -359,6 +405,7 @@ def root_dist(tree,threshold,support):
     return clusters
 
 METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist}
+THRESHOLDFREE = {'argmax_clusters':argmax_clusters}
 if __name__ == "__main__":
     # parse user arguments
     import argparse
@@ -368,8 +415,10 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--threshold', required=True, type=float, help="Length Threshold")
     parser.add_argument('-s', '--support', required=False, type=float, default=float('-inf'), help="Branch Support Threshold")
     parser.add_argument('-m', '--method', required=False, type=str, default='max_clade', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
+    parser.add_argument('-tf', '--threshold_free', required=False, type=str, default=None, help="Threshold-Free Approach (options: %s)" % ', '.join(sorted(THRESHOLDFREE.keys())))
     args = parser.parse_args()
     assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
+    assert args.threshold_free is None or args.threshold_free in THRESHOLDFREE, "ERROR: Invalid threshold-free approach: %s" % args.threshold_free
     assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
     assert args.support >= 0 or args.support == float('-inf'), "ERROR: Branch support must be at least 0"
     if args.input == 'stdin':
@@ -384,7 +433,10 @@ if __name__ == "__main__":
 
     # run algorithm
     for t,tree in enumerate(trees):
-        clusters = METHODS[args.method.lower()](tree,args.threshold,args.support)
+        if args.threshold_free is None:
+            clusters = METHODS[args.method.lower()](tree,args.threshold,args.support)
+        else:
+            clusters = THRESHOLDFREE[args.threshold_free](METHODS[args.method.lower()],tree,args.threshold,args.support)
         outfile.write('SequenceName\tClusterNumber\n')
         cluster_num = 1
         for cluster in clusters:
