@@ -9,8 +9,7 @@ Note that TreeCluster can run within seconds even on ultra-large datasets, so it
 
 ## Usage
 ```bash
-usage: TreeCluster.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT]
-                          [-m METHOD]
+usage: TreeCluster.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT] [-m METHOD] [-tf THRESHOLD_FREE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -24,6 +23,9 @@ optional arguments:
                         Clustering Method (options: avg_clade, length,
                         length_clade, max, max_clade, med_clade, root_dist,
                         single_linkage_clade) (default: max_clade)
+  -tf THRESHOLD_FREE, --threshold_free THRESHOLD_FREE
+                        Threshold-Free Approach (options: argmax_clusters)
+                        (default: None)
 ```
 
 ## Clustering Methods
@@ -70,6 +72,9 @@ optional arguments:
     2. For all internal nodes *u* in the clade defined by the cluster, a leaf in the left subclade of *u* must be within *t* distance of a leaf in the right subclade of *u*
     3. Leaves cannot be connected by branches with support below *s*
     * For a tree with *n* leaves, this algorithm is O(*n*)
+
+## Threshold-Free Approaches
+* **Argmax Clusters:** Choose the threshold that maximizes the number of non-singleton clusters over all thresholds from 0 to *t*
 
 ## Requirements
 * [Biopython](http://biopython.org/)
