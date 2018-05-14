@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from Bio import Phylo
 from math import log
 from queue import PriorityQueue,Queue
+from treeswift import read_tree_newick
 from sys import stderr
 NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
 
@@ -54,68 +54,54 @@ def cut(node):
         if descendant.DELETED:
             continue
         descendant.DELETED = True
-        descendant.left_dist = 0; descendant.right_dist = 0; descendant.branch_length = 0
-        if descendant.is_terminal():
-            cluster.append(descendant.name)
+        descendant.left_dist = 0; descendant.right_dist = 0; descendant.edge_length = 0
+        if descendant.is_leaf():
+            cluster.append(str(descendant))
         else:
-            for c in descendant.clades:
+            for c in descendant.children:
                 descendants.put(c)
     return cluster
 
 # initialize properties of input tree and return set containing taxa of leaves
 def prep(tree,support):
-    tree.rooted = True
+    tree.resolve_polytomies(); tree.suppress_unifurcations()
     leaves = set()
-    for node in tree.find_clades(order='postorder'):
+    for node in tree.traverse_postorder():
         node.DELETED = False
-        if len(node.clades) == 1: # resolve unifurcations
-            child = node.clades[0]
-            node.branch_length += child.branch_length # update branch length
-            if node.name is None:
-                node.name = child.name # update name (if applicable)
-            if node.confidence is None or node.confidence > child.confidence:
-                node.confidence = child.confidence # update confidence (if applicable)
-            if node.comment is None:
-                node.comment = child.comment # update comment (if applicable)
-            node.clades = child.clades # update children
-        while len(node.clades) > 2: # resolve polytomy
-            c1 = node.clades.pop(); c2 = node.clades.pop()
-            newnode = Phylo.Newick.BaseTree.Clade(branch_length=0, clades=[c1,c2])
-            newnode.DELETED = False
-            node.clades.append(newnode)
-        if node.is_terminal():
-            leaves.add(node.name)
+        if node.is_leaf():
+            leaves.add(str(node))
         else:
             try:
-                node.confidence = float(node.confidence)
+                node.confidence = float(str(node))
             except:
                 node.confidence = 100. # give edges without support values support 100
             if node.confidence < support: # don't allow low-support edges
-                node.branch_length = float('inf')
+                node.edge_length = float('inf')
     return leaves
 
 # return a sorted list of all unique pairwise leaf distances <= a given threshold
 def pairwise_dists_below_thresh(tree,threshold):
     pairwise_dists = set()
-    for node in tree.find_clades(order='postorder'):
-        if node.is_terminal():
+    for node in tree.traverse_postorder():
+        if node.is_leaf():
             node.leaf_dists = {0}; node.min_leaf_dist = 0
         else:
-            for i in range(len(node.clades)-1):
-                c1 = node.clades[i]
-                for j in range(i+1,len(node.clades)):
-                    c2 = node.clades[j]
+            children = list(node.children)
+            for i in range(len(children)-1):
+                c1 = children[i]
+                for j in range(i+1,len(children)):
+                    c2 = children[j]
                     for d1 in c1.leaf_dists:
                         for d2 in c2.leaf_dists:
-                            pd = d1 + c1.branch_length + d2 + c2.branch_length
+                            pd = d1 + c1.edge_length + d2 + c2.edge_length
                             if pd <= threshold:
                                 pairwise_dists.add(pd)
             node.leaf_dists = set(); node.min_leaf_dist = float('inf')
-            for c in node.clades:
-                if c.min_leaf_dist + c.branch_length > threshold:
+            for c in children:
+                if c.min_leaf_dist + c.edge_length > threshold:
                     continue
                 for d in c.leaf_dists:
-                    nd = d+c.branch_length
+                    nd = d+c.edge_length
                     if nd < threshold:
                         node.leaf_dists.add(nd)
                     if nd < node.min_leaf_dist:
@@ -126,33 +112,34 @@ def pairwise_dists_below_thresh(tree,threshold):
 def min_clusters_threshold_max(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
-    for node in tree.find_clades(order='postorder'):
+    for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
         if node.DELETED:
             continue
 
         # find my undeleted max distances to leaf
-        if node.is_terminal():
+        if node.is_leaf():
             node.left_dist = 0; node.right_dist = 0
         else:
-            if node.clades[0].DELETED and node.clades[1].DELETED:
+            children = list(node.children)
+            if children[0].DELETED and children[1].DELETED:
                 cut(node); continue
-            if node.clades[0].DELETED:
+            if children[0].DELETED:
                 node.left_dist = 0
             else:
-                node.left_dist = max(node.clades[0].left_dist,node.clades[0].right_dist) + node.clades[0].branch_length
-            if node.clades[1].DELETED:
+                node.left_dist = max(children[0].left_dist,children[0].right_dist) + children[0].edge_length
+            if children[1].DELETED:
                 node.right_dist = 0
             else:
-                node.right_dist = max(node.clades[1].left_dist,node.clades[1].right_dist) + node.clades[1].branch_length
+                node.right_dist = max(children[1].left_dist,children[1].right_dist) + children[1].edge_length
 
             # if my kids are screwing things up, cut out the longer one
             if node.left_dist + node.right_dist > threshold:
                 if node.left_dist > node.right_dist:
-                    cluster = cut(node.clades[0])
+                    cluster = cut(children[0])
                     node.left_dist = 0
                 else:
-                    cluster = cut(node.clades[1])
+                    cluster = cut(children[1])
                     node.right_dist = 0
 
                 # add cluster
@@ -170,25 +157,26 @@ def min_clusters_threshold_max(tree,threshold,support):
 def min_clusters_threshold_med_clade(tree,threshold,support):
     leaves = prep(tree,support)
     # bottom-up traversal to compute median pairwise distances
-    for node in tree.find_clades(order='postorder'):
-        if node.is_terminal():
+    for node in tree.traverse_postorder():
+        if node.is_leaf():
             node.med_pair_dist = 0
             node.leaf_dists = [0]
             node.pair_dists = []
         else:
-            l_leaf_dists = [d + node.clades[0].branch_length for d in node.clades[0].leaf_dists]
-            r_leaf_dists = [d + node.clades[1].branch_length for d in node.clades[1].leaf_dists]
+            children = list(node.children)
+            l_leaf_dists = [d + children[0].edge_length for d in children[0].leaf_dists]
+            r_leaf_dists = [d + children[1].edge_length for d in children[1].leaf_dists]
             node.leaf_dists = merge_two_sorted_lists(l_leaf_dists,r_leaf_dists)
             if len(l_leaf_dists) < len(r_leaf_dists):
                 across_leaf_dists = [[l+r for r in r_leaf_dists] for l in l_leaf_dists]
             else:
                 across_leaf_dists = [[l+r for l in l_leaf_dists] for r in r_leaf_dists]
-            node.pair_dists = merge_multi_sorted_lists([node.clades[0].pair_dists,node.clades[1].pair_dists] + across_leaf_dists)
+            node.pair_dists = merge_multi_sorted_lists([children[0].pair_dists,children[1].pair_dists] + across_leaf_dists)
             if node.pair_dists[-1] == float('inf'):
                 node.med_pair_dist = float('inf')
             else:
                 node.med_pair_dist = median(node.pair_dists)
-            for c in (node.clades[0],node.clades[1]):
+            for c in (children[0],children[1]):
                 del c.leaf_dists; del c.pair_dists
 
     # top-down traversal to cut out clusters
@@ -199,22 +187,24 @@ def min_clusters_threshold_med_clade(tree,threshold,support):
         if node.med_pair_dist <= threshold:
             clusters.append(cut(node))
         else:
-            traverse.put(node.clades[0]); traverse.put(node.clades[1])
+            for c in node.children:
+                traverse.put(c)
     return clusters
 
 # average leaf pairwise distance cannot exceed threshold, and clusters must define clades
 def min_clusters_threshold_avg_clade(tree,threshold,support):
     leaves = prep(tree,support)
     # bottom-up traversal to compute average pairwise distances
-    for node in tree.find_clades(order='postorder'):
+    for node in tree.traverse_postorder():
         node.total_pair_dist = 0; node.total_leaf_dist = 0
-        if node.is_terminal():
+        if node.is_leaf():
             node.num_leaves = 1
             node.avg_pair_dist = 0
         else:
-            node.num_leaves = node.clades[0].num_leaves + node.clades[1].num_leaves
-            node.total_pair_dist = node.clades[0].total_pair_dist + node.clades[1].total_pair_dist + (node.clades[0].total_leaf_dist*node.clades[1].num_leaves + node.clades[1].total_leaf_dist*node.clades[0].num_leaves)
-            node.total_leaf_dist = (node.clades[0].total_leaf_dist + node.clades[0].branch_length*node.clades[0].num_leaves) + (node.clades[1].total_leaf_dist + node.clades[1].branch_length*node.clades[1].num_leaves)
+            children = list(node.children)
+            node.num_leaves = sum(c.num_leaves for c in children)
+            node.total_pair_dist = children[0].total_pair_dist + children[1].total_pair_dist + (children[0].total_leaf_dist*children[1].num_leaves + children[1].total_leaf_dist*children[0].num_leaves)
+            node.total_leaf_dist = (children[0].total_leaf_dist + children[0].edge_length*children[0].num_leaves) + (children[1].total_leaf_dist + children[1].edge_length*children[1].num_leaves)
             node.avg_pair_dist = node.total_pair_dist/((node.num_leaves*(node.num_leaves-1))/2)
 
     # top-down traversal to cut out clusters
@@ -225,38 +215,40 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
         if node.avg_pair_dist <= threshold:
             clusters.append(cut(node))
         else:
-            traverse.put(node.clades[0]); traverse.put(node.clades[1])
+            for c in node.children:
+                traverse.put(c)
     return clusters
 
 # clusters must define clades, and clades are joined if at least one pair of leaves across the two clades are within the threshold distance
 def min_clusters_threshold_single_linkage_clade(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
-    for node in tree.find_clades(order='postorder'):
+    for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
         if node.DELETED:
             continue
 
         # find my undeleted min distance to leaf
-        if node.is_terminal():
+        if node.is_leaf():
             node.left_dist = 0; node.right_dist = 0
         else:
-            if node.clades[0].DELETED and node.clades[1].DELETED:
+            children = list(node.children)
+            if children[0].DELETED and children[1].DELETED:
                 cut(node); continue
-            if node.clades[0].DELETED:
+            if children[0].DELETED:
                 node.left_dist = 0
             else:
-                node.left_dist = min(node.clades[0].left_dist,node.clades[0].right_dist) + node.clades[0].branch_length
-            if node.clades[1].DELETED:
+                node.left_dist = min(children[0].left_dist,children[0].right_dist) + children[0].edge_length
+            if children[1].DELETED:
                 node.right_dist = 0
             else:
-                node.right_dist = min(node.clades[1].left_dist,node.clades[1].right_dist) + node.clades[1].branch_length
+                node.right_dist = min(children[1].left_dist,children[1].right_dist) + children[1].edge_length
 
             # if my kids are screwing things up, cut both
             if node.left_dist + node.right_dist > threshold:
-                cluster_l = cut(node.clades[0])
+                cluster_l = cut(children[0])
                 node.left_dist = 0
-                cluster_r = cut(node.clades[1])
+                cluster_r = cut(children[1])
                 node.right_dist = 0
 
                 # add cluster
@@ -275,31 +267,32 @@ def min_clusters_threshold_single_linkage_clade(tree,threshold,support):
 def min_clusters_threshold_max_clade(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
-    for node in tree.find_clades(order='postorder'):
+    for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
         if node.DELETED:
             continue
 
         # find my undeleted max distances to leaf
-        if node.is_terminal():
+        if node.is_leaf():
             node.left_dist = 0; node.right_dist = 0
         else:
-            if node.clades[0].DELETED and node.clades[1].DELETED:
+            children = list(node.children)
+            if children[0].DELETED and children[1].DELETED:
                 cut(node); continue
-            if node.clades[0].DELETED:
+            if children[0].DELETED:
                 node.left_dist = 0
             else:
-                node.left_dist = max(node.clades[0].left_dist,node.clades[0].right_dist) + node.clades[0].branch_length
-            if node.clades[1].DELETED:
+                node.left_dist = max(children[0].left_dist,children[0].right_dist) + children[0].edge_length
+            if children[1].DELETED:
                 node.right_dist = 0
             else:
-                node.right_dist = max(node.clades[1].left_dist,node.clades[1].right_dist) + node.clades[1].branch_length
+                node.right_dist = max(children[1].left_dist,children[1].right_dist) + children[1].edge_length
 
             # if my kids are screwing things up, cut both
             if node.left_dist + node.right_dist > threshold:
-                cluster_l = cut(node.clades[0])
+                cluster_l = cut(children[0])
                 node.left_dist = 0
-                cluster_r = cut(node.clades[1])
+                cluster_r = cut(children[1])
                 node.right_dist = 0
 
                 # add cluster
@@ -334,13 +327,13 @@ def argmax_clusters(method,tree,threshold,support):
 def length(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
-    for node in tree.find_clades(order='postorder'):
+    for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
         if node.DELETED:
             continue
 
         # if i'm screwing things up, cut me
-        if node.branch_length is not None and node.branch_length > threshold:
+        if node.edge_length is not None and node.edge_length > threshold:
             cluster = cut(node)
             if len(cluster) != 0:
                 clusters.append(cluster)
@@ -356,15 +349,16 @@ def length(tree,threshold,support):
 def length_clade(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
-    for node in tree.find_clades(order='postorder'):
+    for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
-        if node.DELETED or node.is_terminal():
+        if node.DELETED or node.is_leaf():
             continue
 
         # if either kid is screwing things up, cut both
-        if node.clades[0].branch_length > threshold or node.clades[1].branch_length > threshold:
-            cluster_l = cut(node.clades[0])
-            cluster_r = cut(node.clades[1])
+        children = list(node.children)
+        if children[0].edge_length > threshold or children[1].edge_length > threshold:
+            cluster_l = cut(children[0])
+            cluster_r = cut(children[1])
 
             # add clusters
             for cluster in (cluster_l,cluster_r):
@@ -382,16 +376,14 @@ def length_clade(tree,threshold,support):
 def root_dist(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
-    for node in tree.find_clades(order='preorder'):
+    for node in tree.traverse_preorder():
         # if I've already been handled, ignore me
         if node.DELETED:
             continue
-        for c in node.clades:
-            c.parent = node
-        if not hasattr(node,'parent'):
+        if node.is_root():
             node.root_dist = 0
         else:
-            node.root_dist = node.parent.root_dist + node.branch_length
+            node.root_dist = node.parent.root_dist + node.edge_length
         if node.root_dist > threshold:
             cluster = cut(node)
             if len(cluster) != 0:
@@ -423,13 +415,21 @@ if __name__ == "__main__":
     assert args.support >= 0 or args.support == float('-inf'), "ERROR: Branch support must be at least 0"
     if args.input == 'stdin':
         from sys import stdin; infile = stdin
+    elif args.input.lower().endswith('.gz'):
+        from gzip import open as gopen; infile = gopen(args.input)
     else:
         infile = open(args.input)
     if args.output == 'stdout':
         from sys import stdout; outfile = stdout
     else:
         outfile = open(args.output,'w')
-    trees = [tree for tree in Phylo.parse(infile,'newick')]
+    trees = []
+    for line in infile:
+        if isinstance(line,bytes):
+            l = line.decode().strip()
+        else:
+            l = line.strip()
+        trees.append(read_tree_newick(l))
 
     # run algorithm
     for t,tree in enumerate(trees):
