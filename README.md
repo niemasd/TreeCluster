@@ -35,6 +35,18 @@ optional arguments:
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
+* **Leaf Dist Avg:** Cluster the leaves by cutting the tree at *t* distance away from the bottom of the tree, where "bottom" is defined as the average root-to-tip distance
+    1. Branches with support below *s* are simply treated as infinitely long
+    2. For a tree with *n* leaves, this algorithm is O(*n*)
+
+* **Leaf Dist Max:** Cluster the leaves by cutting the tree at *t* distance away from the bottom of the tree, where "bottom" is defined as the furthest leaf from the root
+    1. Branches with support below *s* are simply treated as infinitely long
+    2. For a tree with *n* leaves, this algorithm is O(*n*)
+
+* **Leaf Dist Min:** Cluster the leaves by cutting the tree at *t* distance away from the bottom of the tree, where "bottom" is defined as the closest leaf to the root
+    1. Branches with support below *s* are simply treated as infinitely long
+    2. For a tree with *n* leaves, this algorithm is O(*n*)
+
 * **Length:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The cluster does not contain any edges above length *t*
     2. Leaves cannot be connected by branches with support below *s*

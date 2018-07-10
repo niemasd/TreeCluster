@@ -40,6 +40,10 @@ def median(x):
     else:
         return (x[int(len(x)/2)]+x[int(len(x)/2)-1])/2
 
+# get the average of a list
+def avg(x):
+    return float(sum(x))/len(x)
+
 # convert p-distance to Jukes-Cantor distance
 def p_to_jc(d,seq_type):
     b = {'dna':3./4., 'protein':19./20.}[seq_type]
@@ -396,7 +400,20 @@ def root_dist(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist}
+# cut tree at threshold distance from the leaves (if tree not ultrametric, max = distance from furthest leaf from root, min = distance from closest leaf to root, avg = average of all leaves)
+def leaf_dist(tree,threshold,support,mode):
+    modes = {'max':max,'min':min,'avg':avg}
+    assert mode in modes, "Invalid mode. Must be one of: %s" % ', '.join(sorted(modes.keys()))
+    dist_from_root = modes[mode](d for u,d in tree.distances_from_root(internal=False)) - threshold
+    return root_dist(tree,dist_from_root,support)
+def leaf_dist_max(tree,threshold,support):
+    return leaf_dist(tree,threshold,support,'max')
+def leaf_dist_min(tree,threshold,support):
+    return leaf_dist(tree,threshold,support,'min')
+def leaf_dist_avg(tree,threshold,support):
+    return leaf_dist(tree,threshold,support,'avg')
+
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist, 'leaf_dist_max':leaf_dist_max, 'leaf_dist_min':leaf_dist_min, 'leaf_dist_avg':leaf_dist_avg}
 THRESHOLDFREE = {'argmax_clusters':argmax_clusters}
 if __name__ == "__main__":
     # parse user arguments
