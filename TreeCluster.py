@@ -71,6 +71,8 @@ def prep(tree,support):
     tree.resolve_polytomies(); tree.suppress_unifurcations()
     leaves = set()
     for node in tree.traverse_postorder():
+        if node.edge_length is None:
+            node.edge_length = 0
         node.DELETED = False
         if node.is_leaf():
             leaves.add(str(node))
