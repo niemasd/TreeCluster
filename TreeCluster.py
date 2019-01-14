@@ -225,44 +225,45 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
                 traverse.put(c)
     return clusters
 
-# clusters must define clades, and clades are joined if at least one pair of leaves across the two clades are within the threshold distance
-def min_clusters_threshold_single_linkage_clade(tree,threshold,support):
+# single-linkage clustering, where clusters must define clades
+def single_linkage_clade(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
+
+    # find my undeleted min distance to leaf
     for node in tree.traverse_postorder():
-        # if I've already been handled, ignore me
+        if node.is_leaf():
+            node.min_dist = 0
+        else:
+            node.min_dist = min(c.min_dist + c.edge_length for c in node.children)
+
+    # find clusters
+    for node in tree.traverse_preorder():
         if node.DELETED:
             continue
-
-        # find my undeleted min distance to leaf
-        if node.is_leaf():
-            node.left_dist = 0; node.right_dist = 0
-        else:
-            children = list(node.children)
-            if children[0].DELETED and children[1].DELETED:
-                cut(node); continue
-            if children[0].DELETED:
-                node.left_dist = 0
-            else:
-                node.left_dist = min(children[0].left_dist,children[0].right_dist) + children[0].edge_length
-            if children[1].DELETED:
-                node.right_dist = 0
-            else:
-                node.right_dist = min(children[1].left_dist,children[1].right_dist) + children[1].edge_length
-
-            # if my kids are screwing things up, cut both
-            if node.left_dist + node.right_dist > threshold:
-                cluster_l = cut(children[0])
-                node.left_dist = 0
-                cluster_r = cut(children[1])
-                node.right_dist = 0
-
-                # add cluster
-                for cluster in (cluster_l,cluster_r):
-                    if len(cluster) != 0:
-                        clusters.append(cluster)
-                        for leaf in cluster:
-                            leaves.remove(leaf)
+        valid = True
+        for i in range(len(node.children)-1):
+            u = node.children[i]
+            if u.DELETED:
+                continue
+            u_dist = u.min_dist + u.edge_length
+            for j in range(i+1,len(node.children)):
+                v = node.children[j]
+                if v.DELETED:
+                    continue
+                v_dist = v.min_dist + v.edge_length
+                if u_dist + v_dist > threshold:
+                    valid = False; break
+            if valid == False:
+                break
+        if valid:
+            cluster = cut(node)
+            for c in node.children:
+                c.min_dist = 0
+            if len(cluster) != 0:
+                clusters.append(cluster)
+                for leaf in cluster:
+                    leaves.remove(leaf)
 
     # add all remaining leaves to a single cluster
     if len(leaves) != 0:
@@ -415,7 +416,7 @@ def leaf_dist_min(tree,threshold,support):
 def leaf_dist_avg(tree,threshold,support):
     return leaf_dist(tree,threshold,support,'avg')
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':min_clusters_threshold_single_linkage_clade, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist, 'leaf_dist_max':leaf_dist_max, 'leaf_dist_min':leaf_dist_min, 'leaf_dist_avg':leaf_dist_avg}
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':single_linkage_clade, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist, 'leaf_dist_max':leaf_dist_max, 'leaf_dist_min':leaf_dist_min, 'leaf_dist_avg':leaf_dist_avg}
 THRESHOLDFREE = {'argmax_clusters':argmax_clusters}
 if __name__ == "__main__":
     # parse user arguments
