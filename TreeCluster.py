@@ -225,45 +225,33 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
                 traverse.put(c)
     return clusters
 
-# single-linkage clustering, where clusters must define clades
-def single_linkage_clade(tree,threshold,support):
+# single-linkage clustering
+def single_linkage(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = []
 
-    # find my undeleted min distance to leaf
+    # find clusters
     for node in tree.traverse_postorder():
         if node.is_leaf():
             node.min_dist = 0
         else:
-            node.min_dist = min(c.min_dist + c.edge_length for c in node.children)
-
-    # find clusters
-    for node in tree.traverse_preorder():
-        if node.DELETED:
-            continue
-        valid = True
-        for i in range(len(node.children)-1):
-            u = node.children[i]
-            if u.DELETED:
-                continue
-            u_dist = u.min_dist + u.edge_length
-            for j in range(i+1,len(node.children)):
-                v = node.children[j]
-                if v.DELETED:
-                    continue
-                v_dist = v.min_dist + v.edge_length
-                if u_dist + v_dist > threshold:
-                    valid = False; break
-            if valid == False:
-                break
-        if valid:
-            cluster = cut(node)
+            node.min_dist = float('inf')
             for c in node.children:
-                c.min_dist = 0
-            if len(cluster) != 0:
-                clusters.append(cluster)
-                for leaf in cluster:
-                    leaves.remove(leaf)
+                c_dist = c.min_dist + c.edge_length
+                if c_dist > threshold:
+                    cluster = cut(c)
+                    if len(cluster) != 0:
+                        clusters.append(cluster)
+                        for leaf in cluster:
+                            leaves.remove(leaf)
+                    c.min_dist = float('inf'); c_dist = float('inf')
+                if c_dist < node.min_dist:
+                    node.min_dist = c_dist
+    cluster = cut(tree.root)
+    if len(cluster) != 0:
+        clusters.append(cluster)
+        for leaf in cluster:
+            leaves.remove(leaf)
 
     # add all remaining leaves to a single cluster
     if len(leaves) != 0:
@@ -416,7 +404,7 @@ def leaf_dist_min(tree,threshold,support):
 def leaf_dist_avg(tree,threshold,support):
     return leaf_dist(tree,threshold,support,'avg')
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage_clade':single_linkage_clade, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist, 'leaf_dist_max':leaf_dist_max, 'leaf_dist_min':leaf_dist_min, 'leaf_dist_avg':leaf_dist_avg}
+METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage':single_linkage, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist, 'leaf_dist_max':leaf_dist_max, 'leaf_dist_min':leaf_dist_min, 'leaf_dist_avg':leaf_dist_avg}
 THRESHOLDFREE = {'argmax_clusters':argmax_clusters}
 if __name__ == "__main__":
     # parse user arguments
