@@ -79,11 +79,11 @@ optional arguments:
     * Branches with support below *s* are simply treated as infinitely long
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
-* **Single Linkage Clade:** Cluster the leaves such that the following conditions hold for each cluster:
-    1. The leaves in the cluster must define a clade in *T*
-    2. For all internal nodes *u* in the clade defined by the cluster, a leaf in the left subclade of *u* must be within *t* distance of a leaf in the right subclade of *u*
-    3. Leaves cannot be connected by branches with support below *s*
-    * For a tree with *n* leaves, this algorithm is O(*n*)
+* **Single Linkage:** Cluster the leaves such that the following conditions hold:
+    1. For any two leaves *u* and *v*, if the distance between *u* and *v* is at most *t*, they must be in the same cluster
+    2. Leaves cannot be connected by branches with support below *s*
+    3. The number of clusters is maximized
+    * For a tree with *n* leaves, this algorithm is O(*n*²)
 
 ## Threshold-Free Approaches
 * **Argmax Clusters:** Choose the threshold that maximizes the number of non-singleton clusters over all thresholds from 0 to *t*
