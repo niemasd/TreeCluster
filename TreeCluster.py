@@ -7,7 +7,7 @@ NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
 
 # merge two sorted lists into a sorted list
 def merge_two_sorted_lists(x,y):
-    out = []; i = 0; j = 0
+    out = list(); i = 0; j = 0
     while i < len(x) and j < len(y):
         if x[i] < y[j]:
             out.append(x[i]); i+= 1
@@ -26,7 +26,7 @@ def merge_multi_sorted_lists(lists):
         if len(lists[l]) != 0:
             pq.put((lists[l][0],l))
     inds = [1 for _ in range(len(lists))]
-    out = []
+    out = list()
     while not pq.empty():
         d,l = pq.get(); out.append(d)
         if inds[l] < len(lists[l]):
@@ -51,7 +51,7 @@ def p_to_jc(d,seq_type):
 
 # cut out the current node's subtree (by setting all nodes' DELETED to True) and return list of leaves
 def cut(node):
-    cluster = []
+    cluster = list()
     descendants = Queue(); descendants.put(node)
     while not descendants.empty():
         descendant = descendants.get()
@@ -117,7 +117,7 @@ def pairwise_dists_below_thresh(tree,threshold):
 # split leaves into minimum number of clusters such that the maximum leaf pairwise distance is below some threshold
 def min_clusters_threshold_max(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = []
+    clusters = list()
     for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
         if node.DELETED:
@@ -167,7 +167,7 @@ def min_clusters_threshold_med_clade(tree,threshold,support):
         if node.is_leaf():
             node.med_pair_dist = 0
             node.leaf_dists = [0]
-            node.pair_dists = []
+            node.pair_dists = list()
         else:
             children = list(node.children)
             l_leaf_dists = [d + children[0].edge_length for d in children[0].leaf_dists]
@@ -186,7 +186,7 @@ def min_clusters_threshold_med_clade(tree,threshold,support):
                 del c.leaf_dists; del c.pair_dists
 
     # top-down traversal to cut out clusters
-    clusters = []
+    clusters = list()
     traverse = Queue(); traverse.put(tree.root)
     while not traverse.empty():
         node = traverse.get()
@@ -214,7 +214,7 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
             node.avg_pair_dist = node.total_pair_dist/((node.num_leaves*(node.num_leaves-1))/2)
 
     # top-down traversal to cut out clusters
-    clusters = []
+    clusters = list()
     traverse = Queue(); traverse.put(tree.root)
     while not traverse.empty():
         node = traverse.get()
@@ -226,9 +226,31 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
     return clusters
 
 # single-linkage clustering
+def single_linkage(tree,threshold,support): # slow (just computes pairwise distance matrix and does standard single linkage clustering)
+    # build linkage graph
+    leaves = prep(tree,support)
+    dm = tree.distance_matrix(leaf_labels=True)
+    graph = {u:{v for v in dm[u] if dm[u][v] <= threshold} for u in leaves}
+
+    # find components in linkage graph
+    clusters = list()
+    while len(leaves) != 0:
+        cluster = list()
+        explore = Queue(); explore.put(leaves.pop())
+        while not explore.empty():
+            curr = explore.get()
+            leaves.discard(curr)
+            cluster.append(curr)
+            for neighbor in graph[curr]:
+                if neighbor in leaves: # hasn't been explored yet
+                    explore.put(neighbor)
+        clusters.append(cluster)
+    return clusters
+
+''' # OLD (not correct in all cases)
 def single_linkage(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = []
+    clusters = list()
 
     # find clusters
     for node in tree.traverse_postorder():
@@ -257,11 +279,12 @@ def single_linkage(tree,threshold,support):
     if len(leaves) != 0:
         clusters.append(list(leaves))
     return clusters
+'''
 
 # min_clusters_threshold_max, but all clusters must define a clade
 def min_clusters_threshold_max_clade(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = []
+    clusters = list()
     for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
         if node.DELETED:
@@ -321,7 +344,7 @@ def argmax_clusters(method,tree,threshold,support):
 # cut all branches longer than the threshold
 def length(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = []
+    clusters = list()
     for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
         if node.DELETED:
@@ -343,7 +366,7 @@ def length(tree,threshold,support):
 # same as length, and clusters must define a clade
 def length_clade(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = []
+    clusters = list()
     for node in tree.traverse_postorder():
         # if I've already been handled, ignore me
         if node.DELETED or node.is_leaf():
@@ -370,7 +393,7 @@ def length_clade(tree,threshold,support):
 # cut tree at threshold distance from root (clusters will be clades by definition) (ignores support threshold if branch is below cutting point)
 def root_dist(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = []
+    clusters = list()
     for node in tree.traverse_preorder():
         # if I've already been handled, ignore me
         if node.DELETED:
@@ -431,7 +454,7 @@ if __name__ == "__main__":
         from sys import stdout; outfile = stdout
     else:
         outfile = open(args.output,'w')
-    trees = []
+    trees = list()
     for line in infile:
         if isinstance(line,bytes):
             l = line.decode().strip()
