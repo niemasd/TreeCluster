@@ -273,6 +273,9 @@ def single_linkage(tree,threshold,support):
                     node.min_above = (dist,c.min_below[1])
         # min distance through grandparent
         if not c.parent.is_root():
+            dist = node.edge_length + node.parent.edge_length + node.parent.min_above[0]
+            if dist < node.min_above[0]:
+                node.min_above = (dist,node.parent.min_above[1])
             for c in node.parent.parent.children:
                 if c != node.parent:
                     dist = node.edge_length + node.parent.edge_length + c.edge_length + c.min_below[0]
