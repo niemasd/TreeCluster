@@ -83,7 +83,7 @@ optional arguments:
     1. For any two leaves *u* and *v*, if the distance between *u* and *v* is at most *t*, they must be in the same cluster
     2. Leaves cannot be connected by branches with support below *s*
     3. The number of clusters is maximized
-    * For a tree with *n* leaves, this algorithm is O(*n*²)
+    * For a tree with *n* leaves, this algorithm is O(*n*)
 
 ## Threshold-Free Approaches
 * **Argmax Clusters:** Choose the threshold that maximizes the number of non-singleton clusters over all thresholds from 0 to *t*

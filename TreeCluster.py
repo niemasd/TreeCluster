@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from math import log
+from niemads import DisjointSet
 from queue import PriorityQueue,Queue
 from treeswift import read_tree_newick
 from sys import stderr
@@ -226,6 +227,7 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
     return clusters
 
 # single-linkage clustering
+''' # O(n^2)
 def single_linkage(tree,threshold,support): # slow (just computes pairwise distance matrix and does standard single linkage clustering)
     # build linkage graph
     leaves = prep(tree,support)
@@ -246,40 +248,51 @@ def single_linkage(tree,threshold,support): # slow (just computes pairwise dista
                     explore.put(neighbor)
         clusters.append(cluster)
     return clusters
-
-''' # OLD (not correct in all cases)
+'''
 def single_linkage(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = list()
 
-    # find clusters
+    # find closest leaf below (dist,leaf)
     for node in tree.traverse_postorder():
         if node.is_leaf():
-            node.min_dist = 0
+            node.min_below = (0,node.label)
         else:
-            node.min_dist = float('inf')
-            for c in node.children:
-                c_dist = c.min_dist + c.edge_length
-                if c_dist > threshold:
-                    cluster = cut(c)
-                    if len(cluster) != 0:
-                        clusters.append(cluster)
-                        for leaf in cluster:
-                            leaves.remove(leaf)
-                    c.min_dist = float('inf'); c_dist = float('inf')
-                if c_dist < node.min_dist:
-                    node.min_dist = c_dist
-    cluster = cut(tree.root)
-    if len(cluster) != 0:
-        clusters.append(cluster)
-        for leaf in cluster:
-            leaves.remove(leaf)
+            node.min_below = min((c.min_below[0]+c.edge_length,c.min_below[1]) for c in node.children)
 
-    # add all remaining leaves to a single cluster
-    if len(leaves) != 0:
-        clusters.append(list(leaves))
-    return clusters
-'''
+    # find closest leaf above (dist,leaf)
+    for node in tree.traverse_preorder():
+        node.min_above = (float('inf'),None)
+        if node.is_root():
+            continue
+        # min distance through sibling
+        for c in node.parent.children:
+            if c != node:
+                dist = node.edge_length + c.edge_length + c.min_below[0]
+                if dist < node.min_above[0]:
+                    node.min_above = (dist,c.min_below[1])
+        # min distance through grandparent
+        if not c.parent.is_root():
+            for c in node.parent.parent.children:
+                if c != node.parent:
+                    dist = node.edge_length + node.parent.edge_length + c.edge_length + c.min_below[0]
+                    if dist < node.min_above[0]:
+                        node.min_above = (dist,c.min_below[1])
+
+    # set up Disjoint Set
+    ds = DisjointSet(leaves)
+    for node in tree.traverse_preorder(leaves=False):
+        # children to min above
+        for c in node.children:
+            if c.min_below[0] + c.edge_length + node.min_above[0] <= threshold:
+                ds.union(c.min_below[1], node.min_above[1])
+        for i in range(len(node.children)-1):
+            c1 = node.children[i]
+            for j in range(i+1, len(node.children)):
+                c2 = node.children[j]
+                if c1.min_below[0] + c1.edge_length + c2.min_below[0] + c2.edge_length <= threshold:
+                    ds.union(c1.min_below[1], c2.min_below[1])
+    return [list(s) for s in ds.sets()]
 
 # min_clusters_threshold_max, but all clusters must define a clade
 def min_clusters_threshold_max_clade(tree,threshold,support):
