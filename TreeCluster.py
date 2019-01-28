@@ -227,28 +227,6 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
     return clusters
 
 # single-linkage clustering
-''' # O(n^2)
-def single_linkage(tree,threshold,support): # slow (just computes pairwise distance matrix and does standard single linkage clustering)
-    # build linkage graph
-    leaves = prep(tree,support)
-    dm = tree.distance_matrix(leaf_labels=True)
-    graph = {u:{v for v in dm[u] if dm[u][v] <= threshold} for u in leaves}
-
-    # find components in linkage graph
-    clusters = list()
-    while len(leaves) != 0:
-        cluster = list()
-        explore = Queue(); explore.put(leaves.pop())
-        while not explore.empty():
-            curr = explore.get()
-            leaves.discard(curr)
-            cluster.append(curr)
-            for neighbor in graph[curr]:
-                if neighbor in leaves: # hasn't been explored yet
-                    explore.put(neighbor)
-        clusters.append(cluster)
-    return clusters
-'''
 def single_linkage(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = list()
@@ -273,14 +251,9 @@ def single_linkage(tree,threshold,support):
                     node.min_above = (dist,c.min_below[1])
         # min distance through grandparent
         if not c.parent.is_root():
-            dist = node.edge_length + node.parent.edge_length + node.parent.min_above[0]
+            dist = node.edge_length + node.parent.min_above[0]
             if dist < node.min_above[0]:
                 node.min_above = (dist,node.parent.min_above[1])
-            for c in node.parent.parent.children:
-                if c != node.parent:
-                    dist = node.edge_length + node.parent.edge_length + c.edge_length + c.min_below[0]
-                    if dist < node.min_above[0]:
-                        node.min_above = (dist,c.min_below[1])
 
     # set up Disjoint Set
     ds = DisjointSet(leaves)
