@@ -1,5 +1,5 @@
 # TreeCluster
-TreeCluster is a tool that, given a tree *T* (Newick format) and a distance threshold *t*, finds the minimum number of clusters of the leaves of *T* such that some user-specified constraint is met in each cluster. The user can also specify a branch support threshold *s* such that no pair of leaves in any cluster can be connected by branches with support below *s*. Note that all leaves given a cluster of -1 are singletons, meaning they did not cluster with any other leaves (i.e., each leaf with a cluster of -1 is in its own cluster).
+TreeCluster is a tool that, given a tree *T* (Newick format) and a distance threshold *t*, finds the minimum number of clusters of the leaves of *T* such that some user-specified constraint is met in each cluster. The user can also specify a branch support threshold *s* such that no pair of leaves in any cluster can be connected by branches with support less than or equal to *s*. Note that all leaves given a cluster of -1 are singletons, meaning they did not cluster with any other leaves (i.e., each leaf with a cluster of -1 is in its own cluster).
 
 TreeCluster was motivated by [Cluster Picker](https://github.com/emmahodcroft/cluster-picker-and-cluster-matcher).
 
@@ -30,59 +30,70 @@ optional arguments:
 
 ## Clustering Methods
 * **Avg Clade:** Cluster the leaves such that the following conditions hold for each cluster:
-    1. The average pairwise distance between leaves in the cluster is below *t*
-    2. Leaves cannot be connected by branches with support below *s*
+    1. The average pairwise distance between leaves in the cluster is at most *t*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Leaf Dist Avg:** Cluster the leaves by cutting the tree at *t* distance away from the bottom of the tree, where "bottom" is defined as the average root-to-tip distance
-    1. Branches with support below *s* are simply treated as infinitely long
+    1. Branches with support less than or equal to *s* are simply treated as infinitely long
     2. For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Leaf Dist Max:** Cluster the leaves by cutting the tree at *t* distance away from the bottom of the tree, where "bottom" is defined as the furthest leaf from the root
-    1. Branches with support below *s* are simply treated as infinitely long
+    1. Branches with support less than or equal to *s* are simply treated as infinitely long
     2. For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Leaf Dist Min:** Cluster the leaves by cutting the tree at *t* distance away from the bottom of the tree, where "bottom" is defined as the closest leaf to the root
-    1. Branches with support below *s* are simply treated as infinitely long
+    1. Branches with support less than or equal to *s* are simply treated as infinitely long
     2. For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Length:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The cluster does not contain any edges above length *t*
-    2. Leaves cannot be connected by branches with support below *s*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Length Clade:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The cluster does not contain any edges above length *t*
-    2. Leaves cannot be connected by branches with support below *s*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Max:** Cluster the leaves such that the following conditions hold for each cluster:
-    1. The maximum pairwise distance between leaves in the cluster is below *t*
-    2. Leaves cannot be connected by branches with support below *s*
+    1. The maximum pairwise distance between leaves in the cluster is at most *t*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Max Clade:** Cluster the leaves such that the following conditions hold for each cluster:
-    1. The maximum pairwise distance between leaves in the cluster is below *t*
-    2. Leaves cannot be connected by branches with support below *s*
+    1. The maximum pairwise distance between leaves in the cluster is at most *t*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Med Clade:** Cluster the leaves such that the following conditions hold for each cluster:
-    1. The median pairwise distance between leaves in the cluster is below *t*
-    2. Leaves cannot be connected by branches with support below *s*
+    1. The median pairwise distance between leaves in the cluster is at most *t*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*² log *n*) in the worst cas
 
 * **Root Dist:** Cluster the leaves by cutting the tree at *t* distance away from the root
-    * Branches with support below *s* are simply treated as infinitely long
+    * Branches with support less than or equal to *s* are simply treated as infinitely long
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
 * **Single Linkage:** Cluster the leaves such that the following conditions hold:
     1. For any two leaves *u* and *v*, if the distance between *u* and *v* is at most *t*, they must be in the same cluster
-    2. Leaves cannot be connected by branches with support below *s*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The number of clusters is maximized
+    * For a tree with *n* leaves, this algorithm is O(*n*)
+
+* **Sum Branch:** Cluster the leaves such that the following conditions hold for each cluster:
+    1. The total branch length of the spanning tree connecting the leaves of the cluster is at most *t*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
+    * For a tree with *n* leaves, this algorithm is O(*n*)
+
+* **Sum Branch Clade:** Cluster the leaves such that the following conditions hold for each cluster:
+    1. The total branch length of the spanning tree connecting the leaves of the cluster is at most *t*
+    2. Leaves cannot be connected by branches with support less than or equal to *s*
+    3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
 
 ## Threshold-Free Approaches

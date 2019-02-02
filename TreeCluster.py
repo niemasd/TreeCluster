@@ -226,6 +226,73 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
                 traverse.put(c)
     return clusters
 
+# total branch length cannot exceed threshold, and clusters must define clades
+def min_clusters_threshold_sum_bl_clade(tree,threshold,support):
+    leaves = prep(tree,support)
+    clusters = list()
+    for node in tree.traverse_postorder():
+        if node.is_leaf():
+            node.left_total = 0; node.right_total = 0
+        else:
+            children = list(node.children)
+            if children[0].DELETED and children[1].DELETED:
+                cut(node); continue
+            if children[0].DELETED:
+                node.left_total = 0
+            else:
+                node.left_total = children[0].left_total + children[0].right_total + children[0].edge_length
+            if children[1].DELETED:
+                node.right_total = 0
+            else:
+                node.right_total = children[1].left_total + children[1].right_total + children[1].edge_length
+            if node.left_total + node.right_total > threshold:
+                cluster_l = cut(children[0])
+                node.left_total = 0
+                cluster_r = cut(children[1])
+                node.right_total = 0
+                for cluster in (cluster_l,cluster_r):
+                    if len(cluster) != 0:
+                        clusters.append(cluster)
+                        for leaf in cluster:
+                            leaves.remove(leaf)
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
+# total branch length cannot exceed threshold
+def min_clusters_threshold_sum_bl(tree,threshold,support):
+    leaves = prep(tree,support)
+    clusters = list()
+    for node in tree.traverse_postorder():
+        if node.is_leaf():
+            node.left_total = 0; node.right_total = 0
+        else:
+            children = list(node.children)
+            if children[0].DELETED and children[1].DELETED:
+                cut(node); continue
+            if children[0].DELETED:
+                node.left_total = 0
+            else:
+                node.left_total = children[0].left_total + children[0].right_total + children[0].edge_length
+            if children[1].DELETED:
+                node.right_total = 0
+            else:
+                node.right_total = children[1].left_total + children[1].right_total + children[1].edge_length
+            if node.left_total + node.right_total > threshold:
+                if node.left_total > node.right_total:
+                    cluster = cut(children[0])
+                    node.left_total = 0
+                else:
+                    cluster = cut(children[1])
+                    node.right_total = 0
+                if len(cluster) != 0:
+                    clusters.append(cluster)
+                    for leaf in cluster:
+                        leaves.remove(leaf)
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
 # single-linkage clustering
 def single_linkage(tree,threshold,support):
     leaves = prep(tree,support)
@@ -416,7 +483,21 @@ def leaf_dist_min(tree,threshold,support):
 def leaf_dist_avg(tree,threshold,support):
     return leaf_dist(tree,threshold,support,'avg')
 
-METHODS = {'max':min_clusters_threshold_max, 'max_clade':min_clusters_threshold_max_clade, 'avg_clade':min_clusters_threshold_avg_clade, 'med_clade':min_clusters_threshold_med_clade, 'single_linkage':single_linkage, 'length':length, 'length_clade':length_clade, 'root_dist':root_dist, 'leaf_dist_max':leaf_dist_max, 'leaf_dist_min':leaf_dist_min, 'leaf_dist_avg':leaf_dist_avg}
+METHODS = {
+    'max': min_clusters_threshold_max,
+    'max_clade': min_clusters_threshold_max_clade,
+    'sum_branch': min_clusters_threshold_sum_bl,
+    'sum_branch_clade': min_clusters_threshold_sum_bl_clade,
+    'avg_clade': min_clusters_threshold_avg_clade,
+    'med_clade': min_clusters_threshold_med_clade,
+    'single_linkage': single_linkage,
+    'length': length,
+    'length_clade': length_clade,
+    'root_dist': root_dist,
+    'leaf_dist_max': leaf_dist_max,
+    'leaf_dist_min': leaf_dist_min,
+    'leaf_dist_avg': leaf_dist_avg
+}
 THRESHOLDFREE = {'argmax_clusters':argmax_clusters}
 if __name__ == "__main__":
     # parse user arguments
