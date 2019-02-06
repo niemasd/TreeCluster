@@ -336,20 +336,21 @@ def single_linkage_cut(tree,threshold,support):
             bad[0] += 1; bad[2] += 1
         if r_dist + a_dist > threshold:
             bad[1] += 1; bad[2] += 1
+        # cut either (or both) children
+        for i in [0,1]:
+            if bad[i] == 2:
+                cluster = cut(node.children[i])
+                if len(cluster) != 0:
+                    clusters.append(cluster)
+                    for leaf in cluster:
+                        leaves.remove(leaf)
+        # cut above (equals cutting me)
         if bad[2] == 2: # if cutting above, just cut me
             cluster = cut(node)
             if len(cluster) != 0:
                 clusters.append(cluster)
                 for leaf in cluster:
                     leaves.remove(leaf)
-        else: # otherwise, check if I need to cut either (or both) children
-            for i in [0,1]:
-                if bad[i] == 2:
-                    cluster = cut(node.children[i])
-                    if len(cluster) != 0:
-                        clusters.append(cluster)
-                        for leaf in cluster:
-                            leaves.remove(leaf)
     if len(leaves) != 0:
         clusters.append(list(leaves))
     return clusters
