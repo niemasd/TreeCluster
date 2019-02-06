@@ -293,8 +293,69 @@ def min_clusters_threshold_sum_bl(tree,threshold,support):
         clusters.append(list(leaves))
     return clusters
 
-# single-linkage clustering
-def single_linkage(tree,threshold,support):
+# single-linkage clustering using Metin's cut algorithm
+def single_linkage_cut(tree,threshold,support):
+    leaves = prep(tree,support)
+    clusters = list()
+
+	# find closest leaf below (dist,leaf)
+    for node in tree.traverse_postorder():
+        if node.is_leaf():
+            node.min_below = (0,node.label)
+        else:
+            node.min_below = min((c.min_below[0]+c.edge_length,c.min_below[1]) for c in node.children)
+
+    # find closest leaf above (dist,leaf)
+    for node in tree.traverse_preorder():
+        node.min_above = (float('inf'),None)
+        if node.is_root():
+            continue
+        # min distance through sibling
+        for c in node.parent.children:
+            if c != node:
+                dist = node.edge_length + c.edge_length + c.min_below[0]
+                if dist < node.min_above[0]:
+                    node.min_above = (dist,c.min_below[1])
+        # min distance through grandparent
+        if not c.parent.is_root():
+            dist = node.edge_length + node.parent.min_above[0]
+            if dist < node.min_above[0]:
+                node.min_above = (dist,node.parent.min_above[1])
+
+    # find clusters
+    for node in tree.traverse_postorder(leaves=False):
+        # assume binary tree here (prep function guarantees this)
+        l_child,r_child = node.children
+        l_dist = l_child.min_below[0] + l_child.edge_length
+        r_dist = r_child.min_below[0] + r_child.edge_length
+        a_dist = node.min_above[0]
+        bad = [0,0,0] # left, right, up
+        if l_dist + r_dist > threshold:
+            bad[0] += 1; bad[1] += 1
+        if l_dist + a_dist > threshold:
+            bad[0] += 1; bad[2] += 1
+        if r_dist + a_dist > threshold:
+            bad[1] += 1; bad[2] += 1
+        if bad[2] == 2: # if cutting above, just cut me
+            cluster = cut(node)
+            if len(cluster) != 0:
+                clusters.append(cluster)
+                for leaf in cluster:
+                    leaves.remove(leaf)
+        else: # otherwise, check if I need to cut either (or both) children
+            for i in [0,1]:
+                if bad[i] == 2:
+                    cluster = cut(node.children[i])
+                    if len(cluster) != 0:
+                        clusters.append(cluster)
+                        for leaf in cluster:
+                            leaves.remove(leaf)
+    if len(leaves) != 0:
+        clusters.append(list(leaves))
+    return clusters
+
+# single-linkage clustering using Niema's union algorithm
+def single_linkage_union(tree,threshold,support):
     leaves = prep(tree,support)
     clusters = list()
 
@@ -490,7 +551,9 @@ METHODS = {
     'sum_branch_clade': min_clusters_threshold_sum_bl_clade,
     'avg_clade': min_clusters_threshold_avg_clade,
     'med_clade': min_clusters_threshold_med_clade,
-    'single_linkage': single_linkage,
+    'single_linkage': single_linkage_cut,
+    'single_linkage_cut': single_linkage_cut,
+    'single_linkage_union': single_linkage_union,
     'length': length,
     'length_clade': length_clade,
     'root_dist': root_dist,
