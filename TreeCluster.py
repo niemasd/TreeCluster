@@ -413,26 +413,36 @@ def min_clusters_threshold_max_clade(tree,threshold,support):
             node.left_dist = 0; node.right_dist = 0
         else:
             children = list(node.children)
-            if children[0].DELETED and children[1].DELETED:
-                cut(node); continue
             if children[0].DELETED:
-                node.left_dist = 0
+                node.left_dist = float('inf')
+                cluster = cut(children[1])
+                if len(cluster) != 0:
+                    clusters.append(cluster)
+                    for leaf in cluster:
+                        leaves.remove(leaf)
             else:
                 node.left_dist = max(children[0].left_dist,children[0].right_dist) + children[0].edge_length
             if children[1].DELETED:
-                node.right_dist = 0
+                node.right_dist = float('inf')
+                cluster = cut(children[0])
+                if len(cluster) != 0:
+                    clusters.append(cluster)
+                    for leaf in cluster:leaves.remove(leaf)
             else:
                 node.right_dist = max(children[1].left_dist,children[1].right_dist) + children[1].edge_length
+            if children[0].DELETED and children[1].DELETED:
+                cut(node); continue
 
             # if my kids are screwing things up, cut both
             if node.left_dist + node.right_dist > threshold:
                 cluster_l = cut(children[0])
-                node.left_dist = 0
+                node.left_dist = float('inf')
                 cluster_r = cut(children[1])
-                node.right_dist = 0
+                node.right_dist = float('inf')
+                cut(node)
 
                 # add cluster
-                for cluster in (cluster_l,cluster_r):
+                for cluster in [cluster_l,cluster_r]:
                     if len(cluster) != 0:
                         clusters.append(cluster)
                         for leaf in cluster:
