@@ -68,6 +68,7 @@ optional arguments:
     2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*)
+    * If verbose mode is enabled (`-v`), the clades defined by the clusters will be printed to standard error
 
 * **Med Clade:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The median pairwise distance between leaves in the cluster is at most *t*
