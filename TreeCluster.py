@@ -164,6 +164,7 @@ def min_clusters_threshold_max(tree,threshold,support):
 # median leaf pairwise distance cannot exceed threshold, and clusters must define clades
 def min_clusters_threshold_med_clade(tree,threshold,support):
     leaves = prep(tree,support)
+
     # bottom-up traversal to compute median pairwise distances
     for node in tree.traverse_postorder():
         if node.is_leaf():
@@ -187,21 +188,26 @@ def min_clusters_threshold_med_clade(tree,threshold,support):
             for c in (children[0],children[1]):
                 del c.leaf_dists; del c.pair_dists
 
-    # top-down traversal to cut out clusters
-    clusters = list()
-    traverse = Queue(); traverse.put(tree.root)
-    while not traverse.empty():
-        node = traverse.get()
+    # perform clustering
+    q = Queue(); q.put(tree.root); roots = list()
+    while not q.empty():
+        node = q.get()
         if node.med_pair_dist <= threshold:
-            clusters.append(cut(node))
+            roots.append(node)
         else:
             for c in node.children:
-                traverse.put(c)
-    return clusters
+                q.put(c)
+
+    # if verbose, print the clades defined by each cluster
+    if VERBOSE:
+        for root in roots:
+            print("%s;" % root.newick(), file=stderr)
+    return [[str(l) for l in root.traverse_leaves()] for root in roots]
 
 # average leaf pairwise distance cannot exceed threshold, and clusters must define clades
 def min_clusters_threshold_avg_clade(tree,threshold,support):
     leaves = prep(tree,support)
+
     # bottom-up traversal to compute average pairwise distances
     for node in tree.traverse_postorder():
         node.total_pair_dist = 0; node.total_leaf_dist = 0
@@ -215,17 +221,21 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
             node.total_leaf_dist = (children[0].total_leaf_dist + children[0].edge_length*children[0].num_leaves) + (children[1].total_leaf_dist + children[1].edge_length*children[1].num_leaves)
             node.avg_pair_dist = node.total_pair_dist/((node.num_leaves*(node.num_leaves-1))/2)
 
-    # top-down traversal to cut out clusters
-    clusters = list()
-    traverse = Queue(); traverse.put(tree.root)
-    while not traverse.empty():
-        node = traverse.get()
+    # perform clustering
+    q = Queue(); q.put(tree.root); roots = list()
+    while not q.empty():
+        node = q.get()
         if node.avg_pair_dist <= threshold:
-            clusters.append(cut(node))
+            roots.append(node)
         else:
             for c in node.children:
-                traverse.put(c)
-    return clusters
+                q.put(c)
+
+    # if verbose, print the clades defined by each cluster
+    if VERBOSE:
+        for root in roots:
+            print("%s;" % root.newick(), file=stderr)
+    return [[str(l) for l in root.traverse_leaves()] for root in roots]
 
 # total branch length cannot exceed threshold, and clusters must define clades
 def min_clusters_threshold_sum_bl_clade(tree,threshold,support):
@@ -466,29 +476,29 @@ def length(tree,threshold,support):
 # same as length, and clusters must define a clade
 def length_clade(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = list()
+
+    # compute max branch length in clades
     for node in tree.traverse_postorder():
-        # if I've already been handled, ignore me
-        if node.DELETED or node.is_leaf():
-            continue
+        if node.is_leaf():
+            node.max_bl = 0
+        else:
+            node.max_bl = max([c.max_bl for c in node.children] + [c.edge_length for c in node.children])
 
-        # if either kid is screwing things up, cut both
-        children = list(node.children)
-        if children[0].edge_length > threshold or children[1].edge_length > threshold:
-            cluster_l = cut(children[0])
-            cluster_r = cut(children[1])
+    # perform clustering
+    q = Queue(); q.put(tree.root); roots = list()
+    while not q.empty():
+        node = q.get()
+        if node.max_bl <= threshold:
+            roots.append(node)
+        else:
+            for c in node.children:
+                q.put(c)
 
-            # add clusters
-            for cluster in (cluster_l,cluster_r):
-                if len(cluster) != 0:
-                    clusters.append(cluster)
-                    for leaf in cluster:
-                        leaves.remove(leaf)
-
-    # add all remaining leaves to a single cluster
-    if len(leaves) != 0:
-        clusters.append(list(leaves))
-    return clusters
+    # if verbose, print the clades defined by each cluster
+    if VERBOSE:
+        for root in roots:
+            print("%s;" % root.newick(), file=stderr)
+    return [[str(l) for l in root.traverse_leaves()] for root in roots]
 
 # cut tree at threshold distance from root (clusters will be clades by definition) (ignores support threshold if branch is below cutting point)
 def root_dist(tree,threshold,support):
