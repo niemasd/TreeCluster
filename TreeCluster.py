@@ -5,6 +5,7 @@ from queue import PriorityQueue,Queue
 from treeswift import read_tree_newick
 from sys import stderr
 NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
+VERBOSE = False
 
 # merge two sorted lists into a sorted list
 def merge_two_sorted_lists(x,y):
@@ -422,6 +423,11 @@ def min_clusters_threshold_max_clade(tree,threshold,support):
         else:
             for c in node.children:
                 q.put(c)
+
+    # if verbose, print the clades defined by each cluster
+    if VERBOSE:
+        for root in roots:
+            print("%s;" % root.newick(), file=stderr)
     return [[str(l) for l in root.traverse_leaves()] for root in roots]
 
 # pick the threshold between 0 and "threshold" that maximizes number of (non-singleton) clusters
@@ -432,7 +438,8 @@ def argmax_clusters(method,tree,threshold,support):
     thresholds = [i*threshold/NUM_THRESH for i in range(NUM_THRESH+1)]
     best = None; best_num = -1; best_t = -1
     for i,t in enumerate(thresholds):
-        print("%s%%"%str(i*100/len(thresholds)).rstrip('0'),end='\r',file=stderr)
+        if VERBOSE:
+            print("%s%%"%str(i*100/len(thresholds)).rstrip('0'),end='\r',file=stderr)
         clusters = method(deepcopy(tree),t,support)
         num_non_singleton = len([c for c in clusters if len(c) > 1])
         if num_non_singleton > best_num:
@@ -554,11 +561,13 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--support', required=False, type=float, default=float('-inf'), help="Branch Support Threshold")
     parser.add_argument('-m', '--method', required=False, type=str, default='max_clade', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
     parser.add_argument('-tf', '--threshold_free', required=False, type=str, default=None, help="Threshold-Free Approach (options: %s)" % ', '.join(sorted(THRESHOLDFREE.keys())))
+    parser.add_argument('-v', '--verbose', action='store_true', help="Verbose Mode")
     args = parser.parse_args()
     assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
     assert args.threshold_free is None or args.threshold_free in THRESHOLDFREE, "ERROR: Invalid threshold-free approach: %s" % args.threshold_free
     assert args.threshold >= 0, "ERROR: Length threshold must be at least 0"
     assert args.support >= 0 or args.support == float('-inf'), "ERROR: Branch support must be at least 0"
+    VERBOSE = args.verbose
     if args.input == 'stdin':
         from sys import stdin; infile = stdin
     elif args.input.lower().endswith('.gz'):
