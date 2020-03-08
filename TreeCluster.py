@@ -402,56 +402,27 @@ def single_linkage_union(tree,threshold,support):
 # min_clusters_threshold_max, but all clusters must define a clade
 def min_clusters_threshold_max_clade(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = list()
+
+    # compute leaf distances and max pairwise distances
     for node in tree.traverse_postorder():
-        # if I've already been handled, ignore me
-        if node.DELETED:
-            continue
-
-        # find my undeleted max distances to leaf
         if node.is_leaf():
-            node.left_dist = 0; node.right_dist = 0
+            node.leaf_dist = 0
+            node.max_pair_dist = 0
         else:
-            children = list(node.children)
-            if children[0].DELETED:
-                node.left_dist = float('inf')
-                cluster = cut(children[1])
-                if len(cluster) != 0:
-                    clusters.append(cluster)
-                    for leaf in cluster:
-                        leaves.remove(leaf)
-            else:
-                node.left_dist = max(children[0].left_dist,children[0].right_dist) + children[0].edge_length
-            if children[1].DELETED:
-                node.right_dist = float('inf')
-                cluster = cut(children[0])
-                if len(cluster) != 0:
-                    clusters.append(cluster)
-                    for leaf in cluster:leaves.remove(leaf)
-            else:
-                node.right_dist = max(children[1].left_dist,children[1].right_dist) + children[1].edge_length
-            if children[0].DELETED and children[1].DELETED:
-                cut(node); continue
+            node.leaf_dist = max(c.leaf_dist + c.edge_length for c in node.children)
+            curr_pair_dist = sum(c.leaf_dist + c.edge_length for c in node.children) # bifurcating because of prep
+            node.max_pair_dist = max([c.max_pair_dist for c in node.children] + [curr_pair_dist])
 
-            # if my kids are screwing things up, cut both
-            if node.left_dist + node.right_dist > threshold:
-                cluster_l = cut(children[0])
-                node.left_dist = float('inf')
-                cluster_r = cut(children[1])
-                node.right_dist = float('inf')
-                cut(node)
-
-                # add cluster
-                for cluster in [cluster_l,cluster_r]:
-                    if len(cluster) != 0:
-                        clusters.append(cluster)
-                        for leaf in cluster:
-                            leaves.remove(leaf)
-
-    # add all remaining leaves to a single cluster
-    if len(leaves) != 0:
-        clusters.append(list(leaves))
-    return clusters
+    # perform clustering
+    q = Queue(); q.put(tree.root); roots = list()
+    while not q.empty():
+        node = q.get()
+        if node.max_pair_dist <= threshold:
+            roots.append(node)
+        else:
+            for c in node.children:
+                q.put(c)
+    return [[str(l) for l in root.traverse_leaves()] for root in roots]
 
 # pick the threshold between 0 and "threshold" that maximizes number of (non-singleton) clusters
 def argmax_clusters(method,tree,threshold,support):
