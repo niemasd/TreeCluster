@@ -34,6 +34,7 @@ optional arguments:
     2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*) in the worst case
+    * If verbose mode is enabled (`-v`), the clades defined by the clusters will be printed to standard error
 
 * **Leaf Dist Avg:** Cluster the leaves by cutting the tree at *t* distance away from the bottom of the tree, where "bottom" is defined as the average root-to-tip distance
     1. Branches with support less than or equal to *s* are simply treated as infinitely long
@@ -57,6 +58,7 @@ optional arguments:
     2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*) in the worst case
+    * If verbose mode is enabled (`-v`), the clades defined by the clusters will be printed to standard error
 
 * **Max:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The maximum pairwise distance between leaves in the cluster is at most *t*
@@ -75,6 +77,7 @@ optional arguments:
     2. Leaves cannot be connected by branches with support less than or equal to *s*
     3. The leaves in the cluster must define a clade in *T*
     * For a tree with *n* leaves, this algorithm is O(*n*² log *n*) in the worst case
+    * If verbose mode is enabled (`-v`), the clades defined by the clusters will be printed to standard error
 
 * **Root Dist:** Cluster the leaves by cutting the tree at *t* distance away from the root
     * Branches with support less than or equal to *s* are simply treated as infinitely long
