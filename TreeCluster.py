@@ -230,35 +230,29 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
 # total branch length cannot exceed threshold, and clusters must define clades
 def min_clusters_threshold_sum_bl_clade(tree,threshold,support):
     leaves = prep(tree,support)
-    clusters = list()
+
+    # compute branch length sums
     for node in tree.traverse_postorder():
         if node.is_leaf():
-            node.left_total = 0; node.right_total = 0
+            node.total_bl = 0
         else:
-            children = list(node.children)
-            if children[0].DELETED and children[1].DELETED:
-                cut(node); continue
-            if children[0].DELETED:
-                node.left_total = 0
-            else:
-                node.left_total = children[0].left_total + children[0].right_total + children[0].edge_length
-            if children[1].DELETED:
-                node.right_total = 0
-            else:
-                node.right_total = children[1].left_total + children[1].right_total + children[1].edge_length
-            if node.left_total + node.right_total > threshold:
-                cluster_l = cut(children[0])
-                node.left_total = 0
-                cluster_r = cut(children[1])
-                node.right_total = 0
-                for cluster in (cluster_l,cluster_r):
-                    if len(cluster) != 0:
-                        clusters.append(cluster)
-                        for leaf in cluster:
-                            leaves.remove(leaf)
-    if len(leaves) != 0:
-        clusters.append(list(leaves))
-    return clusters
+            node.total_bl = sum(c.total_bl + c.edge_length for c in node.children)
+
+    # perform clustering
+    q = Queue(); q.put(tree.root); roots = list()
+    while not q.empty():
+        node = q.get()
+        if node.total_bl <= threshold:
+            roots.append(node)
+        else:
+            for c in node.children:
+                q.put(c)
+
+    # if verbose, print the clades defined by each cluster
+    if VERBOSE:
+        for root in roots:
+            print("%s;" % root.newick(), file=stderr)
+    return [[str(l) for l in root.traverse_leaves()] for root in roots]
 
 # total branch length cannot exceed threshold
 def min_clusters_threshold_sum_bl(tree,threshold,support):
