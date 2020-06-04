@@ -108,3 +108,8 @@ optional arguments:
 ## Requirements
 * [NiemaDS](https://github.com/niemasd/NiemaDS)
 * [TreeSwift](https://github.com/niemasd/TreeSwift)
+
+## Citing TreeCluster
+If you use TreeCluster in your work, please cite:
+
+> Balaban M, Moshiri N, Mai U, Jia X, Mirarab S (2019). "TreeCluster: Clustering biological sequences using phylogenetic trees." *PLoS ONE*. 14(8):e0221068. [doi:10.1371/journal.pone.0221068](https://doi.org/10.1371/journal.pone.0221068)
