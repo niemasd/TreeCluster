@@ -2,7 +2,7 @@ from setuptools import setup,find_packages
 
 setup(
         name='treecluster',    # This is the name of your PyPI-package.
-        version='1.0.0',    # Update the version number for new releases
+        version='1.0.1',    # Update the version number for new releases
         scripts=['TreeCluster.py',], # The name of your script, and also the command you'll be using for calling it
         description='TreeCluster: a tool for clustering biological sequences using phylogenetic trees.',
         long_description='TreeCluster is a tool that, given a tree T (Newick format) and a distance threshold t, \

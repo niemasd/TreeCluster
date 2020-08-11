@@ -3,9 +3,14 @@ from math import log
 from niemads import DisjointSet
 from queue import PriorityQueue,Queue
 from treeswift import read_tree_newick
-from sys import stderr
+from sys import argv,stderr
+VERSION = '1.0.1'
 NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
 VERBOSE = False
+
+# check if user is just printing version
+if '--version' in argv:
+    print("TreeCluster version %s" % VERSION); exit()
 
 # merge two sorted lists into a sorted list
 def merge_two_sorted_lists(x,y):
@@ -566,6 +571,7 @@ if __name__ == "__main__":
     parser.add_argument('-m', '--method', required=False, type=str, default='max_clade', help="Clustering Method (options: %s)" % ', '.join(sorted(METHODS.keys())))
     parser.add_argument('-tf', '--threshold_free', required=False, type=str, default=None, help="Threshold-Free Approach (options: %s)" % ', '.join(sorted(THRESHOLDFREE.keys())))
     parser.add_argument('-v', '--verbose', action='store_true', help="Verbose Mode")
+    parser.add_argument('--version', action='store_true', help="Display Version")
     args = parser.parse_args()
     assert args.method.lower() in METHODS, "ERROR: Invalid method: %s" % args.method
     assert args.threshold_free is None or args.threshold_free in THRESHOLDFREE, "ERROR: Invalid threshold-free approach: %s" % args.threshold_free
