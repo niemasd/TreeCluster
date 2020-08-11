@@ -7,6 +7,19 @@ The default method is "Max Clade" (see [Clustering Methods](#clustering-methods)
 
 Note that TreeCluster can run within seconds even on ultra-large datasets, so it may make sense to use a range of thresholds and determine the appropriate choice based on the results. We intend to develop non-parametric methods of TreeCluster clustering in the future.
 
+## Installation
+TreeCluster can be installed using `pip`:
+
+```bash
+sudo pip install treecluster
+```
+
+If you are using a machine on which you lack administrative powers, TreeCluster can be installed locally using `pip`:
+
+```bash
+pip install --user treecluster
+```
+
 ## Usage
 ```bash
 usage: TreeCluster.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT] [-m METHOD] [-tf THRESHOLD_FREE]
