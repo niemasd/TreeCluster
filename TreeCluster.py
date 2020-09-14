@@ -4,7 +4,7 @@ from niemads import DisjointSet
 from queue import PriorityQueue,Queue
 from treeswift import read_tree_newick
 from sys import argv,stderr
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
 VERBOSE = False
 
@@ -37,7 +37,8 @@ def merge_multi_sorted_lists(lists):
     while not pq.empty():
         d,l = pq.get(); out.append(d)
         if inds[l] < len(lists[l]):
-            pq.put((lists[l][inds[l]],l)); l += 1
+            pq.put((lists[l][inds[l]],l))
+        inds[l] += 1
     return out
 
 # get the median of a sorted list
