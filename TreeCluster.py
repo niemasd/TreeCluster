@@ -4,7 +4,7 @@ from niemads import DisjointSet
 from queue import PriorityQueue,Queue
 from treeswift import read_tree_newick
 from sys import argv,stderr
-VERSION = '1.0.2'
+VERSION = '1.0.3'
 NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
 VERBOSE = False
 
@@ -75,8 +75,11 @@ def cut(node):
     return cluster
 
 # initialize properties of input tree and return set containing taxa of leaves
-def prep(tree,support):
-    tree.resolve_polytomies(); tree.suppress_unifurcations()
+def prep(tree, support, resolve_polytomies=True, suppress_unifurcations=True):
+    if resolve_polytomies:
+        tree.resolve_polytomies()
+    if suppress_unifurcations:
+        tree.suppress_unifurcations()
     leaves = set()
     for node in tree.traverse_postorder():
         if node.edge_length is None:
@@ -412,17 +415,21 @@ def single_linkage_union(tree,threshold,support):
 
 # min_clusters_threshold_max, but all clusters must define a clade
 def min_clusters_threshold_max_clade(tree,threshold,support):
-    leaves = prep(tree,support)
+    leaves = prep(tree, support, resolve_polytomies=False)
 
     # compute leaf distances and max pairwise distances
     for node in tree.traverse_postorder():
         if node.is_leaf():
-            node.leaf_dist = 0
-            node.max_pair_dist = 0
+            node.leaf_dist = 0; node.max_pair_dist = 0
         else:
-            node.leaf_dist = max(c.leaf_dist + c.edge_length for c in node.children)
-            curr_pair_dist = sum(c.leaf_dist + c.edge_length for c in node.children) # bifurcating because of prep
-            node.max_pair_dist = max([c.max_pair_dist for c in node.children] + [curr_pair_dist])
+            node.leaf_dist = float('-inf'); second_max_leaf_dist = float('-inf')
+            for c in node.children: # at least 2 children because of suppressing unifurcations
+                curr_dist = c.leaf_dist + c.edge_length
+                if curr_dist > node.leaf_dist:
+                    second_max_leaf_dist = node.leaf_dist; node.leaf_dist = curr_dist
+                elif curr_dist > second_max_leaf_dist:
+                    second_max_leaf_dist = curr_dist
+            node.max_pair_dist = max([c.max_pair_dist for c in node.children] + [node.leaf_dist + second_max_leaf_dist])
 
     # perform clustering
     q = Queue(); q.put(tree.root); roots = list()
