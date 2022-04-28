@@ -116,7 +116,7 @@ optional arguments:
 
 ## Threshold-Free Approaches
 * **Argmax Clusters:** Choose the threshold that maximizes the number of non-singleton clusters over all thresholds from 0 to *t*
-    * Currently, for the sake of speed, only every 0.0001 threshold is tested (i.e., 0, 0.001, 0.002, ..., *t*)
+    * Currently, for the sake of speed, only every 0.001 threshold is tested (i.e., 0, 0.001, 0.002, ..., *t*)
 
 ## Requirements
 * [NiemaDS](https://github.com/niemasd/NiemaDS)
