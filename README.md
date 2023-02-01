@@ -28,17 +28,19 @@ optional arguments:
   -h, --help            show this help message and exit
   -i INPUT, --input INPUT
                         Input Tree File (default: stdin)
+  -o OUTPUT, --output OUTPUT
+                        Output File (default: stdout)
   -t THRESHOLD, --threshold THRESHOLD
                         Length Threshold (default: None)
   -s SUPPORT, --support SUPPORT
                         Branch Support Threshold (default: -inf)
   -m METHOD, --method METHOD
-                        Clustering Method (options: avg_clade, length,
-                        length_clade, max, max_clade, med_clade, root_dist,
-                        single_linkage_clade) (default: max_clade)
+                        Clustering Method (options: avg_clade, leaf_dist_avg, leaf_dist_max, leaf_dist_min, length, length_clade, max, max_clade,
+                        med_clade, root_dist, single_linkage, single_linkage_cut, single_linkage_union, sum_branch, sum_branch_clade) (default: max_clade)
   -tf THRESHOLD_FREE, --threshold_free THRESHOLD_FREE
-                        Threshold-Free Approach (options: argmax_clusters)
-                        (default: None)
+                        Threshold-Free Approach (options: argmax_clusters) (default: None)
+  -v, --verbose         Verbose Mode (default: False)
+  --version             Display Version (default: False)
 ```
 
 ## Clustering Methods
