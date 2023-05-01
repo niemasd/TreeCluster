@@ -4,7 +4,7 @@ from niemads import DisjointSet
 from queue import PriorityQueue,Queue
 from treeswift import read_tree_newick
 from sys import argv,stderr
-VERSION = '1.0.3'
+VERSION = '1.0.4'
 NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
 VERBOSE = False
 
@@ -589,20 +589,18 @@ if __name__ == "__main__":
     if args.input == 'stdin':
         from sys import stdin; infile = stdin
     elif args.input.lower().endswith('.gz'):
-        from gzip import open as gopen; infile = gopen(args.input)
+        from gzip import open as gopen; infile = gopen(args.input, 'rt')
     else:
         infile = open(args.input)
     if args.output == 'stdout':
         from sys import stdout; outfile = stdout
     else:
         outfile = open(args.output,'w')
-    trees = list()
-    for line in infile:
-        if isinstance(line,bytes):
-            l = line.decode().strip()
-        else:
-            l = line.strip()
-        trees.append(read_tree_newick(l))
+    tmp = read_tree_newick(infile.read().strip())
+    if isinstance(tmp, list):
+        trees = tmp
+    else:
+        trees = [tmp]
 
     # run algorithm
     for t,tree in enumerate(trees):
