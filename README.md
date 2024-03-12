@@ -43,6 +43,12 @@ optional arguments:
   --version             Display Version (default: False)
 ```
 
+## Example Files and Helper Scripts
+To help users, we have provided example files in the [`example_files`](example_files) directory, and we have provided some helper scripts that implement common clustering-related tasks in the [`helper_scripts`](helper_scripts) directory:
+
+* **[`helper_scripts/score_clusters.py`](helper_scripts/score_clusters.py):** Given two clustering files, calculate a comparison metric between them
+    * See scikit-learn's [Clustering Metrics documentation](https://scikit-learn.org/stable/modules/classes.html#clustering-metrics) for details
+
 ## Clustering Methods
 * **Avg Clade:** Cluster the leaves such that the following conditions hold for each cluster:
     1. The average pairwise distance between leaves in the cluster is at most *t*
