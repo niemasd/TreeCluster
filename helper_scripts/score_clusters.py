@@ -11,6 +11,8 @@ Score a given query clustering against a given true clustering, where both clust
     * MI  = Mutual Information
     * NMI = Normalized Mutual Information
     * VM  = V-Measure
+
+See scikit-learn documentation for details: https://scikit-learn.org/stable/modules/classes.html#clustering-metrics
 '''
 from sys import stderr
 try:
