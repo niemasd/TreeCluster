@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 Score a given query clustering against a given true clustering, where both
-clusterings are in the Cluster Picker format.
+clusterings are in the TreeCluster format.
     * AMI = Adjusted Mutual Information
     * ARI = Adjusted Rand Index
     * COM = Completeness Score
