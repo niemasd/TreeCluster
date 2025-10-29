@@ -4,7 +4,7 @@ from niemads import DisjointSet
 from queue import PriorityQueue,Queue
 from treeswift import read_tree_newick
 from sys import argv,stderr
-VERSION = '1.0.4'
+VERSION = '1.0.5'
 NUM_THRESH = 1000 # number of thresholds for the threshold-free methods to use
 VERBOSE = False
 
@@ -219,15 +219,18 @@ def min_clusters_threshold_avg_clade(tree,threshold,support):
 
     # bottom-up traversal to compute average pairwise distances
     for node in tree.traverse_postorder():
-        node.total_pair_dist = 0; node.total_leaf_dist = 0
         if node.is_leaf():
             node.num_leaves = 1
+            node.total_pair_dist = 0
+            node.total_leaf_dist = 0
             node.avg_pair_dist = 0
         else:
-            children = list(node.children)
-            node.num_leaves = sum(c.num_leaves for c in children)
-            node.total_pair_dist = children[0].total_pair_dist + children[1].total_pair_dist + (children[0].total_leaf_dist*children[1].num_leaves + children[1].total_leaf_dist*children[0].num_leaves)
-            node.total_leaf_dist = (children[0].total_leaf_dist + children[0].edge_length*children[0].num_leaves) + (children[1].total_leaf_dist + children[1].edge_length*children[1].num_leaves)
+            x, y = node.children # polytomies have been resolved in `prep()`
+            node.num_leaves = x.num_leaves + y.num_leaves
+            total_leaf_dist_thru_x = x.total_leaf_dist + (x.num_leaves * x.edge_length)
+            total_leaf_dist_thru_y = y.total_leaf_dist + (y.num_leaves * y.edge_length)
+            node.total_pair_dist = (x.total_pair_dist + y.total_pair_dist) + (total_leaf_dist_thru_x*y.num_leaves + total_leaf_dist_thru_y*x.num_leaves)
+            node.total_leaf_dist = total_leaf_dist_thru_x + total_leaf_dist_thru_y
             node.avg_pair_dist = node.total_pair_dist/((node.num_leaves*(node.num_leaves-1))/2)
 
     # perform clustering
