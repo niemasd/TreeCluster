@@ -20,6 +20,12 @@ If you are using a machine on which you lack administrative powers, TreeCluster 
 pip install --user treecluster
 ```
 
+TreeCluster can also be installed using [conda](https://bioconda.github.io/recipes/treecluster/README.html):
+
+```bash
+conda install bioconda::treecluster
+```
+
 ## Usage
 ```bash
 usage: TreeCluster.py [-h] [-i INPUT] -t THRESHOLD [-s SUPPORT] [-m METHOD] [-tf THRESHOLD_FREE]
